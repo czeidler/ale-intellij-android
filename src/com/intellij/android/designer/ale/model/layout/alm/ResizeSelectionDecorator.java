@@ -36,17 +36,19 @@ public class ResizeSelectionDecorator extends com.intellij.designer.designSurfac
     this.almLayoutSpecs = almLayoutSpecs;
   }
 
-  void transform(Area.Rect rect, Rectangle radRoot, DecorationLayer layer) {
-    int width = layer.getWidth();
-    int height = layer.getHeight();
-    double radWidth = radRoot.getWidth();
-    double radHeight = radRoot.getHeight();
-    double scaleX = radWidth / width;
-    double scaleY = radHeight / height;
-    rect.left = (float)(radRoot.getX() + scaleX * rect.left);
-    rect.top = (float)(radRoot.getY() + scaleY * rect.top);
-    rect.right = (float)(radRoot.getX() + scaleX * rect.right);
-    rect.bottom = (float)(radRoot.getY() + scaleY * rect.bottom);
+  Rectangle transform(DecorationLayer layer, RadComponent layout, Area.Rect rect) {
+    Rectangle areaBounds = new Rectangle(Math.round(rect.left), Math.round(rect.top), Math.round(rect.getWidth()),
+                                         Math.round(rect.getHeight()));
+    Rectangle aleLayoutBounds = new Rectangle((int)almLayoutSpecs.getLeftTab().getValue(), (int)almLayoutSpecs.getTopTab().getValue(),
+                                            (int)(almLayoutSpecs.getRightTab().getValue() - almLayoutSpecs.getLeftTab().getValue()),
+                                            (int)(almLayoutSpecs.getBottomTab().getValue() - almLayoutSpecs.getTopTab().getValue()));
+    final Rectangle layoutBounds = layout.fromModel(layer, layout.getBounds());
+    aleLayoutBounds = layout.fromModel(layer, aleLayoutBounds);
+    areaBounds = layout.fromModel(layer, areaBounds);
+    double offsetX = layoutBounds.getX() - aleLayoutBounds.getX();
+    double offsetY = layoutBounds.getY() - aleLayoutBounds.getY();
+    areaBounds.translate((int)offsetX, (int)offsetY);
+    return areaBounds;
   }
 
   @Override
@@ -58,9 +60,9 @@ public class ResizeSelectionDecorator extends com.intellij.designer.designSurfac
       Object viewObject = ((RadViewComponent)component).getViewInfo().getViewObject();
       Area area = almLayoutSpecs.getArea(viewObject);
       Area.Rect rect = area.getRect();
-      transform(rect, component.getRoot().getBounds(), layer);
-      DesignerGraphics.drawRect(style, g, Math.round(rect.left), Math.round(rect.top), Math.round(rect.getWidth()),
-                                Math.round(rect.getHeight()));c
+
+      Rectangle areaBounds = transform(layer, component.getParent(), rect);
+      DesignerGraphics.drawRect(style, g, areaBounds.x, areaBounds.y, areaBounds.width, areaBounds.height);
     }
   }
 }
