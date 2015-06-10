@@ -20,7 +20,6 @@ import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.android.designer.model.RadViewLayoutWithData;
 import com.intellij.designer.designSurface.*;
 import com.intellij.designer.model.RadComponent;
-import nz.ac.auckland.alm.IALMLayoutSpecs;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -65,9 +64,7 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
   public ComponentDecorator getChildSelectionDecorator(RadComponent component, List<RadComponent> selection) {
     if (selectionDecorator == null) {
       if (myContainer instanceof RadViewComponent) {
-        RadViewComponent container = (RadViewComponent)myContainer;
-        IALMLayoutSpecs almLayoutSpecs = (IALMLayoutSpecs)container.getViewInfo().getViewObject();
-        selectionDecorator = new ResizeSelectionDecorator(DrawingStyle.SELECTION, almLayoutSpecs);
+        selectionDecorator = new ResizeSelectionDecorator(DrawingStyle.SELECTION);
       }
     }
 
