@@ -30,7 +30,13 @@ public class ALEProjectComponent extends AbstractProjectComponent {
     viewsMetaManager.getPaletteGroups();
 
     InputStream stream = getClass().getResourceAsStream("ale-views-meta-model.xml");
-    viewsMetaManager.loadMore(stream);
+    try {
+      viewsMetaManager.load(stream);
+      stream.close();
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
