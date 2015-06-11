@@ -22,13 +22,19 @@ import com.intellij.designer.designSurface.*;
 import com.intellij.designer.model.RadComponent;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.util.List;
 
 
 public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecorator {
+  static class PaintInfo {
+    public Rectangle dragRectangle;
+  }
+
   private static final String[] LAYOUT_PARAMS = {"ALMLayout_Layout"};
 
   ResizeSelectionDecorator selectionDecorator;
+  final PaintInfo myPaintInfo = new PaintInfo();
 
   @NotNull
   @Override
@@ -42,21 +48,21 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
       if (context.isTree()) {
         return null;
       }
-      return new ALMLayoutDragOperation(myContainer, context);
+      return new ALMLayoutDragOperation(myContainer, context, myPaintInfo);
     }
     return null;
   }
 
   @Override
   public void addStaticDecorators(List<StaticDecorator> decorators, List<RadComponent> selection) {
-    /*for (RadComponent component : selection) {
+    for (RadComponent component : selection) {
       if (component.getParent() == myContainer) {
         if (!(myContainer.getParent().getLayout() instanceof ILayoutDecorator)) {
-          decorators.add(getRelativeDecorator());
+          decorators.add(new ALMLayoutDecorator(myContainer, myPaintInfo));
         }
         return;
       }
-    }*/
+    }
     super.addStaticDecorators(decorators, selection);
   }
 

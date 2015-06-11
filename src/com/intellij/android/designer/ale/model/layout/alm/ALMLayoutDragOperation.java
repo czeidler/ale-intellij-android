@@ -16,28 +16,69 @@
 package com.intellij.android.designer.ale.model.layout.alm;
 
 import com.intellij.android.designer.designSurface.AbstractEditOperation;
+import com.intellij.android.designer.designSurface.graphics.DesignerGraphics;
 import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.android.designer.model.layout.relative.MultiLineTooltipManager;
 import com.intellij.designer.designSurface.FeedbackLayer;
 import com.intellij.designer.designSurface.OperationContext;
 import com.intellij.designer.model.RadComponent;
 import com.intellij.openapi.application.ApplicationManager;
+import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
 
-public class ALMLayoutDragOperation extends AbstractEditOperation {
-  private RadViewComponent myPrimary;
-  private MultiLineTooltipManager myTooltip;
+class FeedbackPainter extends JComponent {
+  final private RadALMLayout.PaintInfo myPaintInfo;
 
-  public ALMLayoutDragOperation(RadComponent container, OperationContext context) {
+  public FeedbackPainter(RadALMLayout.PaintInfo paintInfo) {
+    this.myPaintInfo = paintInfo;
+  }
+
+  @Override
+  protected void paintComponent(Graphics graphics) {
+    super.paintComponent(graphics);
+
+    DesignerGraphics g = new DesignerGraphics(graphics, this);
+    paint(g);
+  }
+
+  private void paint(@NotNull DesignerGraphics graphics) {
+    graphics.fillRect(myPaintInfo.dragRectangle.x, myPaintInfo.dragRectangle.y, myPaintInfo.dragRectangle.width,
+                      myPaintInfo.dragRectangle.height);
+  }
+}
+
+public class ALMLayoutDragOperation extends AbstractEditOperation {
+  final private RadALMLayout.PaintInfo myPaintInfo;
+  private FeedbackPainter myFeedbackPainter;
+
+  public ALMLayoutDragOperation(RadComponent container, OperationContext context, RadALMLayout.PaintInfo paintInfo) {
     super(container, context);
+
+    this.myPaintInfo = paintInfo;
   }
 
   @Override
   public void showFeedback() {
-    /*FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
+    FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
+    if (myFeedbackPainter == null) {
+      myFeedbackPainter = new FeedbackPainter(myPaintInfo);
+      layer.add(myFeedbackPainter);
+      myFeedbackPainter.setBounds(0, 0, layer.getWidth(), layer.getHeight());
+    }
+
+    RadViewComponent selection = RadViewComponent.getViewComponents(myComponents).get(0);
+    final Rectangle selectionRect = selection.fromModel(layer, selection.getBounds());
+
+    Point moveDelta = myContext.getMoveDelta();
+    myPaintInfo.dragRectangle = new Rectangle(selectionRect.x + moveDelta.x, selectionRect.y + moveDelta.y, (int)selectionRect.getWidth(),
+                                              (int)selectionRect.getHeight());
+    myFeedbackPainter.repaint();
+/*
+    FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
     List<RadViewComponent> viewComponents = RadViewComponent.getViewComponents(myComponents);
 
     if (myFeedback == null) {
@@ -92,7 +133,13 @@ public class ALMLayoutDragOperation extends AbstractEditOperation {
 
   @Override
   public void eraseFeedback() {
+    myPaintInfo.dragRectangle = null;
 
+    if (myFeedbackPainter != null) {
+      FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
+      layer.remove(myFeedbackPainter);
+      layer.repaint();
+    }
   }
 
   @Override
