@@ -15,39 +15,27 @@
  */
 package com.intellij.android.designer.ale.model.layout.alm;
 
-import com.intellij.android.designer.designSurface.AbstractEditOperation;
-import com.intellij.android.designer.designSurface.graphics.DesignerGraphics;
 import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.designer.designSurface.FeedbackLayer;
 import com.intellij.designer.designSurface.OperationContext;
 import com.intellij.designer.model.RadComponent;
-import com.intellij.openapi.application.ApplicationManager;
-import nz.ac.auckland.ale.IEditOperation;
 import nz.ac.auckland.ale.LayoutEditor;
 import nz.ac.auckland.alm.Area;
 
 import java.awt.*;
 
 
-public class ALMLayoutDragOperation extends AbstractEditOperation {
-  private FeedbackPainter myFeedbackPainter;
-  private LayoutSpecManager myLayoutSpecManager;
-  private IEditOperation myEditOperation;
-
+public class ALMLayoutDragOperation extends ALMLayoutOperation {
   public ALMLayoutDragOperation(RadComponent container, OperationContext context, LayoutSpecManager layoutSpecManager) {
-    super(container, context);
-
-    this.myLayoutSpecManager = layoutSpecManager;
+    super(container, context, layoutSpecManager);
   }
 
   @Override
   public void showFeedback() {
+    super.showFeedback();
+
     FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
-    if (myFeedbackPainter == null) {
-      myFeedbackPainter = new FeedbackPainter(myLayoutSpecManager);
-      layer.add(myFeedbackPainter);
-      myFeedbackPainter.setBounds(0, 0, layer.getWidth(), layer.getHeight());
-    }
+
 
     RadViewComponent selection = RadViewComponent.getViewComponents(myComponents).get(0);
 
@@ -68,40 +56,5 @@ public class ALMLayoutDragOperation extends AbstractEditOperation {
                                   (int)dragRectView.getHeight());
     myFeedbackPainter.repaint();
   }
-
-  @Override
-  public void eraseFeedback() {
-    if (myFeedbackPainter != null) {
-      FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
-      layer.remove(myFeedbackPainter);
-      layer.repaint();
-    }
-  }
-
-  @Override
-  public boolean canExecute() {
-    if (myEditOperation != null)
-      return true;
-    return false;
-  }
-
-  @Override
-  public void execute() throws Exception {
-    if (myEditOperation == null) {
-      super.execute();
-      return;
-    }
-
-    ApplicationManager.getApplication().runWriteAction(new Runnable() {
-      @Override
-      public void run() {
-        myEditOperation.perform();
-        LayoutSpecXmlWriter xmlWriter = new LayoutSpecXmlWriter(myLayoutSpecManager);
-        xmlWriter.write();
-        myLayoutSpecManager.invalidate();
-      }
-    });
-  }
-
 }
 
