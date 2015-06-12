@@ -416,7 +416,7 @@ class LayoutSpecXmlWriter {
       }
     }
 
-    // Add a either a connect or align connection:
+    // Add either a connect or an align tag:
     Area connectToArea;
     String connectAttribute;
     String checkForDuplicatesAttribute;
@@ -437,7 +437,7 @@ class LayoutSpecXmlWriter {
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
       clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
     }
-    // check for other valid connection
+    // Check for an existing valid connection and clear the attribute if there is one. This avoids redundant attributes.
     for (Area neighbour : checkForDuplicatesAreas) {
       if (!handledAreas.contains(neighbour))
         continue;
