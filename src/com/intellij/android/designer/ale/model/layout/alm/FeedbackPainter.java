@@ -16,8 +16,10 @@
 package com.intellij.android.designer.ale.model.layout.alm;
 
 import com.intellij.android.designer.designSurface.graphics.DesignerGraphics;
+import com.intellij.android.designer.model.RadViewComponent;
 import nz.ac.auckland.ale.IEditOperation;
 import nz.ac.auckland.ale.IEditOperationFeedback;
+import nz.ac.auckland.ale.SwapOperationFeedback;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -25,14 +27,16 @@ import java.awt.*;
 
 
 class FeedbackPainter extends JComponent {
+  final LayoutSpecManager myLayoutSpecManager;
   IEditOperation myEditOperation;
-  Rectangle dragRect = new Rectangle();
+  Rectangle myDragRect = new Rectangle();
 
-  public FeedbackPainter() {
+  public FeedbackPainter(LayoutSpecManager layoutSpecManager) {
+    myLayoutSpecManager = layoutSpecManager;
   }
 
   public void setDragRect(int x, int y, int width, int height) {
-    dragRect.setBounds(x, y, width, height);
+    myDragRect.setBounds(x, y, width, height);
   }
 
   public void setEditOperation(IEditOperation editOperation) {
@@ -48,11 +52,18 @@ class FeedbackPainter extends JComponent {
   }
 
   private void paint(@NotNull DesignerGraphics graphics) {
-    graphics.fillRect(dragRect.x, dragRect.y, dragRect.width, dragRect.height);
+    graphics.fillRect(myDragRect.x, myDragRect.y, myDragRect.width, myDragRect.height);
 
     if (myEditOperation == null)
       return;
     IEditOperationFeedback editOperationFeedback = myEditOperation.getFeedback();
-    
+
+    if (editOperationFeedback instanceof SwapOperationFeedback) {
+      SwapOperationFeedback swapFeedback = (SwapOperationFeedback)editOperationFeedback;
+      RadViewComponent target = myLayoutSpecManager.getComponentFor(swapFeedback.getTargetArea());
+
+      Rectangle targetRect = target.fromModel(getParent(), target.getBounds());
+      graphics.drawRect(targetRect.x, targetRect.y, targetRect.width, targetRect.height);
+    }
   }
 }

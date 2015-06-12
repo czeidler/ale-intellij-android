@@ -36,7 +36,35 @@ public class LayoutEditor {
    * @return null if no suitable operation has been found
    */
   public IEditOperation detectOperation(Area movedArea, Area.Rect dragRect, float dragX, float dragY) {
+    Area areaUnder = findContentAreaAt(dragX, dragY, movedArea);
+    if (areaUnder == null)
+      return null;
+    if (movedArea != null)
+      return SwapOperation.swap(this, movedArea, areaUnder);
+
     return null;
   }
 
+  public LayoutSpec getLayoutSpec() {
+    return layoutSpec;
+  }
+
+  private Area findContentAreaAt(float x, float y, Area veto) {
+    for (Area area : layoutSpec.getAreas()) {
+      if (area == veto)
+        continue;
+      if (contentAreaContains(area, x, y))
+        return area;
+    }
+    return null;
+  }
+
+  private boolean contentAreaContains(Area area, float x, float y) {
+    Area.Rect rect = area.getContentRect();
+    if (rect.left > x || rect.right < x)
+      return false;
+    if (rect.top > y || rect.bottom < y)
+      return false;
+    return true;
+  }
 }

@@ -25,9 +25,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import nz.ac.auckland.ale.IEditOperation;
 import nz.ac.auckland.ale.LayoutEditor;
 import nz.ac.auckland.alm.Area;
-import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
 import java.awt.*;
 
 
@@ -46,7 +44,7 @@ public class ALMLayoutDragOperation extends AbstractEditOperation {
   public void showFeedback() {
     FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
     if (myFeedbackPainter == null) {
-      myFeedbackPainter = new FeedbackPainter();
+      myFeedbackPainter = new FeedbackPainter(myLayoutSpecManager);
       layer.add(myFeedbackPainter);
       myFeedbackPainter.setBounds(0, 0, layer.getWidth(), layer.getHeight());
     }
@@ -55,10 +53,12 @@ public class ALMLayoutDragOperation extends AbstractEditOperation {
 
     LayoutEditor layoutEditor = new LayoutEditor(myLayoutSpecManager.getLayoutSpec());
     Area moveArea = myLayoutSpecManager.getAreaFor(selection);
-    Point modelMouseLoc = selection.toModel(layer, myContext.getLocation());
     Rectangle selectionRect = selection.getBounds();
     Area.Rect dragRect = new Area.Rect(selectionRect.x, selectionRect.y, selectionRect.x + selectionRect.width,
                                        selectionRect.y + selectionRect.height);
+
+    Point modelMouseLoc = LayoutSpecManager.toModel(layer, myLayoutSpecManager.getALMLayoutSpecs(), selection.getParent(),
+                                                    myContext.getLocation());
     myEditOperation = layoutEditor.detectOperation(moveArea, dragRect, modelMouseLoc.x, modelMouseLoc.y);
     myFeedbackPainter.setEditOperation(myEditOperation);
 
@@ -98,6 +98,7 @@ public class ALMLayoutDragOperation extends AbstractEditOperation {
         myEditOperation.perform();
         LayoutSpecXmlWriter xmlWriter = new LayoutSpecXmlWriter(myLayoutSpecManager);
         xmlWriter.write();
+        myLayoutSpecManager.invalidate();
       }
     });
   }
