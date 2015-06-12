@@ -35,19 +35,15 @@ public class ResizeSelectionDecorator extends com.intellij.designer.designSurfac
     super(Color.RED /* should not be used */, 1 /* should not be used */);
     this.style = style;
 
-    final String TYPE = "alm_resize";
-    addPoint(new DirectionResizePoint(DrawingStyle.SELECTION, Position.NORTH_WEST, TYPE,
-                                      "Change layout:width x layout:height, top x left alignment"));
-    addPoint(new DirectionResizePoint(DrawingStyle.SELECTION, Position.NORTH, TYPE, "Change layout:height, top alignment"));
-    addPoint(new DirectionResizePoint(DrawingStyle.SELECTION, Position.NORTH_EAST, TYPE,
-                                      "Change layout:width x layout:height, top x right alignment"));
-    addPoint(new DirectionResizePoint(DrawingStyle.SELECTION, Position.EAST, TYPE, "Change layout:width, right alignment"));
-    addPoint(new DirectionResizePoint(DrawingStyle.SELECTION, Position.SOUTH_EAST, TYPE,
-                                      "Change layout:width x layout:height, bottom x right alignment"));
-    addPoint(new DirectionResizePoint(DrawingStyle.SELECTION, Position.SOUTH, TYPE, "Change layout:height, bottom alignment"));
-    addPoint(new DirectionResizePoint(DrawingStyle.SELECTION, Position.SOUTH_WEST, TYPE,
-                                      "Change layout:width x layout:height, bottom x left alignment"));
-    addPoint(new DirectionResizePoint(DrawingStyle.SELECTION, Position.WEST, TYPE, "Change layout:width, left alignment"));
+    final String description = "Resize or detach";
+    addPoint(new ALMDirectionResizePoint(DrawingStyle.SELECTION, Position.NORTH_WEST, ALMLayoutResizeOperation.TYPE, description));
+    addPoint(new ALMDirectionResizePoint(DrawingStyle.SELECTION, Position.NORTH, ALMLayoutResizeOperation.TYPE, description));
+    addPoint(new ALMDirectionResizePoint(DrawingStyle.SELECTION, Position.NORTH_EAST, ALMLayoutResizeOperation.TYPE,description));
+    addPoint(new ALMDirectionResizePoint(DrawingStyle.SELECTION, Position.EAST, ALMLayoutResizeOperation.TYPE, description));
+    addPoint(new ALMDirectionResizePoint(DrawingStyle.SELECTION, Position.SOUTH_EAST, ALMLayoutResizeOperation.TYPE, description));
+    addPoint(new ALMDirectionResizePoint(DrawingStyle.SELECTION, Position.SOUTH, ALMLayoutResizeOperation.TYPE, description));
+    addPoint(new ALMDirectionResizePoint(DrawingStyle.SELECTION, Position.SOUTH_WEST, ALMLayoutResizeOperation.TYPE, description));
+    addPoint(new ALMDirectionResizePoint(DrawingStyle.SELECTION, Position.WEST, ALMLayoutResizeOperation.TYPE, description));
   }
 
   @Override
