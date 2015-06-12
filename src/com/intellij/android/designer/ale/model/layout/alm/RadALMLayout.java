@@ -17,9 +17,11 @@ package com.intellij.android.designer.ale.model.layout.alm;
 
 import com.intellij.android.designer.designSurface.graphics.DrawingStyle;
 import com.intellij.android.designer.model.RadViewComponent;
+import com.intellij.android.designer.model.RadViewLayout;
 import com.intellij.android.designer.model.RadViewLayoutWithData;
 import com.intellij.designer.designSurface.*;
 import com.intellij.designer.model.RadComponent;
+import nz.ac.auckland.alm.IALMLayoutSpecs;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -27,14 +29,21 @@ import java.util.List;
 
 
 public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecorator {
-  static class PaintInfo {
-    public Rectangle dragRectangle;
-  }
-
   private static final String[] LAYOUT_PARAMS = {"ALMLayout_Layout"};
 
   ResizeSelectionDecorator selectionDecorator;
-  final PaintInfo myPaintInfo = new PaintInfo();
+  LayoutSpecManager myLayoutSpecManager;
+
+  private LayoutSpecManager getLayoutSpecManager() {
+    if (myLayoutSpecManager != null)
+      return myLayoutSpecManager;
+    myLayoutSpecManager = new LayoutSpecManager();
+
+    RadViewComponent layout = (RadViewComponent)myContainer;
+    IALMLayoutSpecs almLayoutSpecs = (IALMLayoutSpecs)layout.getViewInfo().getViewObject();
+    myLayoutSpecManager.setTo(almLayoutSpecs, layout);
+    return myLayoutSpecManager;
+  }
 
   @NotNull
   @Override
@@ -48,22 +57,9 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
       if (context.isTree()) {
         return null;
       }
-      return new ALMLayoutDragOperation(myContainer, context, myPaintInfo);
+      return new ALMLayoutDragOperation(myContainer, context, getLayoutSpecManager());
     }
     return null;
-  }
-
-  @Override
-  public void addStaticDecorators(List<StaticDecorator> decorators, List<RadComponent> selection) {
-    for (RadComponent component : selection) {
-      if (component.getParent() == myContainer) {
-        if (!(myContainer.getParent().getLayout() instanceof ILayoutDecorator)) {
-          decorators.add(new ALMLayoutDecorator(myContainer, myPaintInfo));
-        }
-        return;
-      }
-    }
-    super.addStaticDecorators(decorators, selection);
   }
 
   @Override

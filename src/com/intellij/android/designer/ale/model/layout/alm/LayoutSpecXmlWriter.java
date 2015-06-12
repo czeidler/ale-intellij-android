@@ -390,7 +390,7 @@ class LayoutSpecXmlWriter {
     viewComponent.setAttribute(connectAttribute, ALE_URI, myLayoutSpecManager.getComponentFor(connectToArea).ensureId());
   }
 
-  public void applyNewSpecs() {
+  public void write() {
     Map<XTab, Edge> xTabEdgeMap = new HashMap<XTab, Edge>();
     Map<YTab, Edge> yTabEdgeMap = new HashMap<YTab, Edge>();
     Edge.fillEdges(myLayoutSpec.getAreas(), xTabEdgeMap, yTabEdgeMap);
