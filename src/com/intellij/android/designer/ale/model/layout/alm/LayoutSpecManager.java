@@ -20,6 +20,7 @@ import com.intellij.designer.model.RadComponent;
 import nz.ac.auckland.alm.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -51,36 +52,17 @@ class LayoutSpecManager {
 
   public void setTo(IALMLayoutSpecs almLayoutSpecs, RadComponent layout) {
     myLayout = layout;
-    myLayoutSpec = new LayoutSpec();
+    myLayoutSpec = LayoutSpec.clone(almLayoutSpecs.getAreas(), almLayoutSpecs.getCustomConstraints(), almLayoutSpecs.getLeftTab(),
+                                    almLayoutSpecs.getTopTab(), almLayoutSpecs.getRightTab(), almLayoutSpecs.getBottomTab());
     myRadViewToAreaMap.clear();
     myAreaToRadViewMap.clear();
 
-    final Map<XTab, XTab> oldToCloneXTabs = new HashMap<XTab, XTab>();
-    final Map<YTab, YTab> oldToCloneYTabs = new HashMap<YTab, YTab>();
-    oldToCloneXTabs.put(almLayoutSpecs.getLeftTab(), myLayoutSpec.getLeft());
-    oldToCloneXTabs.put(almLayoutSpecs.getRightTab(), myLayoutSpec.getRight());
-    oldToCloneYTabs.put(almLayoutSpecs.getTopTab(), myLayoutSpec.getTop());
-    oldToCloneYTabs.put(almLayoutSpecs.getBottomTab(), myLayoutSpec.getBottom());
-    myLayoutSpec.getLeft().setValue(almLayoutSpecs.getLeftTab().getValue());
-    myLayoutSpec.getTop().setValue(almLayoutSpecs.getTopTab().getValue());
-    myLayoutSpec.getRight().setValue(almLayoutSpecs.getRightTab().getValue());
-    myLayoutSpec.getBottom().setValue(almLayoutSpecs.getBottomTab().getValue());
+    List<Area> areas = almLayoutSpecs.getAreas();
 
     for (RadComponent child : layout.getChildren()) {
       RadViewComponent viewComponent = (RadViewComponent)child;
-      Object view = viewComponent.getViewInfo().getViewObject();
-      Area area = almLayoutSpecs.getArea(view);
-
-      XTab left = getTab(oldToCloneXTabs, area.getLeft());
-      YTab top = getTab(oldToCloneYTabs, area.getTop());
-      XTab right = getTab(oldToCloneXTabs, area.getRight());
-      YTab bottom = getTab(oldToCloneYTabs, area.getBottom());
-
-      Area clone = myLayoutSpec.addArea(left, top, right, bottom);
-      clone.setAlignment(area.getHorizontalAlignment(), area.getVerticalAlignment());
-      clone.setMinSize(area.getMinSize());
-      clone.setPreferredSize(area.getPreferredSize());
-      clone.setMaxSize(area.getMaxSize());
+      Area area = almLayoutSpecs.getArea(viewComponent.getViewInfo().getViewObject());
+      Area clone = myLayoutSpec.getAreas().get(areas.indexOf(area));
 
       myRadViewToAreaMap.put(viewComponent, clone);
       myAreaToRadViewMap.put(clone, viewComponent);
