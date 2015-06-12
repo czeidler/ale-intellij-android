@@ -17,14 +17,12 @@ package com.intellij.android.designer.ale.model.layout.alm;
 
 import com.intellij.android.designer.designSurface.graphics.DrawingStyle;
 import com.intellij.android.designer.model.RadViewComponent;
-import com.intellij.android.designer.model.RadViewLayout;
 import com.intellij.android.designer.model.RadViewLayoutWithData;
 import com.intellij.designer.designSurface.*;
 import com.intellij.designer.model.RadComponent;
 import nz.ac.auckland.alm.IALMLayoutSpecs;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
 import java.util.List;
 
 
@@ -35,7 +33,7 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
   LayoutSpecManager myLayoutSpecManager;
 
   private LayoutSpecManager getLayoutSpecManager() {
-    if (myLayoutSpecManager != null)
+    if (myLayoutSpecManager != null && myLayoutSpecManager.isValid())
       return myLayoutSpecManager;
     myLayoutSpecManager = new LayoutSpecManager();
 

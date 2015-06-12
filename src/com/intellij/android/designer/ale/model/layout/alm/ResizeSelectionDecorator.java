@@ -50,21 +50,6 @@ public class ResizeSelectionDecorator extends com.intellij.designer.designSurfac
     addPoint(new DirectionResizePoint(DrawingStyle.SELECTION, Position.WEST, TYPE, "Change layout:width, left alignment"));
   }
 
-  Rectangle transform(DecorationLayer layer, IALMLayoutSpecs almLayoutSpecs, RadComponent layout, Area.Rect rect) {
-    Rectangle areaBounds = new Rectangle(Math.round(rect.left), Math.round(rect.top), Math.round(rect.getWidth()),
-                                         Math.round(rect.getHeight()));
-    Rectangle aleLayoutBounds = new Rectangle((int)almLayoutSpecs.getLeftTab().getValue(), (int)almLayoutSpecs.getTopTab().getValue(),
-                                            (int)(almLayoutSpecs.getRightTab().getValue() - almLayoutSpecs.getLeftTab().getValue()),
-                                            (int)(almLayoutSpecs.getBottomTab().getValue() - almLayoutSpecs.getTopTab().getValue()));
-    final Rectangle layoutBounds = layout.fromModel(layer, layout.getBounds());
-    aleLayoutBounds = layout.fromModel(layer, aleLayoutBounds);
-    areaBounds = layout.fromModel(layer, areaBounds);
-    double offsetX = layoutBounds.getX() - aleLayoutBounds.getX();
-    double offsetY = layoutBounds.getY() - aleLayoutBounds.getY();
-    areaBounds.translate((int)offsetX, (int)offsetY);
-    return areaBounds;
-  }
-
   @Override
   protected void paint(DecorationLayer layer, Graphics2D g, RadComponent component) {
     Rectangle bounds = getBounds(layer, component);
@@ -78,7 +63,7 @@ public class ResizeSelectionDecorator extends com.intellij.designer.designSurfac
       Area area = almLayoutSpecs.getArea(viewObject);
       Area.Rect rect = area.getRect();
 
-      Rectangle areaBounds = transform(layer, almLayoutSpecs, component.getParent(), rect);
+      Rectangle areaBounds = LayoutSpecManager.fromModel(layer, almLayoutSpecs, component.getParent(), rect);
       DesignerGraphics.drawRect(style, g, areaBounds.x, areaBounds.y, areaBounds.width, areaBounds.height);
     }
   }
