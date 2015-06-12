@@ -57,6 +57,8 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
       }
       return new ALMLayoutDragOperation(myContainer, context, getLayoutSpecManager());
     }
+    if (context.is(ALMLayoutResizeOperation.TYPE))
+      return new ALMLayoutResizeOperation(myContainer, context, getLayoutSpecManager());
     return null;
   }
 
