@@ -87,10 +87,12 @@ class LayoutSpecXmlWriter {
     String getTabTag();
     String getOppositeTabTag();
     String getConnectionTag();
+    String getOppositeConnectionTag();
     String getAlignTag();
+    String getOppositeAlignTag();
   }
 
-  class LeftDirection implements IDirection {
+  static class LeftDirection implements IDirection {
     @Override
     public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
       return map.get(area.getLeft());
@@ -132,12 +134,22 @@ class LayoutSpecXmlWriter {
     }
 
     @Override
+    public String getOppositeConnectionTag() {
+      return ATTR_LAYOUT_TO_LEFT_OF;
+    }
+
+    @Override
     public String getAlignTag() {
       return ATTR_LAYOUT_ALIGN_LEFT;
     }
+
+    @Override
+    public String getOppositeAlignTag() {
+      return ATTR_LAYOUT_ALIGN_RIGHT;
+    }
   }
 
-  class RightDirection implements IDirection {
+  static class RightDirection implements IDirection {
     @Override
     public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
       return map.get(area.getRight());
@@ -179,12 +191,22 @@ class LayoutSpecXmlWriter {
     }
 
     @Override
+    public String getOppositeConnectionTag() {
+      return ATTR_LAYOUT_TO_RIGHT_OF;
+    }
+
+    @Override
     public String getAlignTag() {
       return ATTR_LAYOUT_ALIGN_RIGHT;
     }
+
+    @Override
+    public String getOppositeAlignTag() {
+      return ATTR_LAYOUT_ALIGN_LEFT;
+    }
   }
 
-  class TopDirection implements IDirection {
+  static class TopDirection implements IDirection {
     @Override
     public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
       return map.get(area.getTop());
@@ -226,12 +248,22 @@ class LayoutSpecXmlWriter {
     }
 
     @Override
+    public String getOppositeConnectionTag() {
+      return ATTR_LAYOUT_ABOVE;
+    }
+
+    @Override
     public String getAlignTag() {
       return ATTR_LAYOUT_ALIGN_TOP;
     }
+
+    @Override
+    public String getOppositeAlignTag() {
+      return ATTR_LAYOUT_ALIGN_BOTTOM;
+    }
   }
 
-  class BottomDirection implements IDirection {
+  static class BottomDirection implements IDirection {
     @Override
     public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
       return map.get(area.getBottom());
@@ -273,8 +305,18 @@ class LayoutSpecXmlWriter {
     }
 
     @Override
+    public String getOppositeConnectionTag() {
+      return ATTR_LAYOUT_BELOW;
+    }
+
+    @Override
     public String getAlignTag() {
       return ATTR_LAYOUT_ALIGN_BOTTOM;
+    }
+
+    @Override
+    public String getOppositeAlignTag() {
+      return ATTR_LAYOUT_ALIGN_TOP;
     }
   }
 
@@ -304,7 +346,8 @@ class LayoutSpecXmlWriter {
     return value;
   }
 
-  private <Tab> void writeSpecs(RadViewComponent viewComponent, Area area, Map<Tab, Edge> map, IDirection direction) {
+  private <Tab> void writeSpecs(RadViewComponent viewComponent, Area area, Map<Tab, Edge> map, IDirection direction,
+                                List<Area> handledAreas) {
     // border?
     if (direction.getTab(area) == direction.getTab(myLayoutSpec)) {
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
@@ -347,7 +390,7 @@ class LayoutSpecXmlWriter {
 
     // Valid connected to connection?
     String connectedToId = getAttrValue(viewComponent, direction.getTabTag());
-    if (!connectedToId.equals("")) {
+    if (!connectedToId.isEmpty()) {
       List<Area> areas = direction.getAreas(edge);
       for (Area neighbour : areas) {
         String neighbourId = myLayoutSpecManager.getComponentFor(neighbour).getId();
@@ -361,7 +404,7 @@ class LayoutSpecXmlWriter {
 
     // Valid align with connection?
     String alignedToId = getAttrValue(viewComponent, direction.getAlignTag());
-    if (!alignedToId.equals("")) {
+    if (!alignedToId.isEmpty()) {
       List<Area> areas = direction.getOppositeAreas(edge);
       for (Area neighbour : areas) {
         String neighbourId = myLayoutSpecManager.getComponentFor(neighbour).getId();
@@ -376,16 +419,33 @@ class LayoutSpecXmlWriter {
     // Add a either a connect or align connection:
     Area connectToArea;
     String connectAttribute;
+    String checkForDuplicatesAttribute;
+    List<Area> checkForDuplicatesAreas;
     if (direction.getAreas(edge).size() > 0) {
       connectToArea = direction.getAreas(edge).get(0);
       connectAttribute = direction.getConnectionTag();
+      checkForDuplicatesAttribute = direction.getOppositeConnectionTag();
+      checkForDuplicatesAreas = direction.getAreas(edge);
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
       clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
-    } else {
+    }
+    else {
       connectToArea = direction.getOppositeAreas(edge).get(0);
       connectAttribute = direction.getAlignTag();
+      checkForDuplicatesAttribute = direction.getOppositeAlignTag();
+      checkForDuplicatesAreas = direction.getOppositeAreas(edge);
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
       clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
+    }
+    // check for other valid connection
+    for (Area neighbour : checkForDuplicatesAreas) {
+      if (!handledAreas.contains(neighbour))
+        continue;
+      connectedToId = getAttrValue(myLayoutSpecManager.getComponentFor(neighbour), checkForDuplicatesAttribute);
+      if (connectedToId.equals(viewComponent.getId())) {
+        clearAttribute(viewComponent, ALE_URI, connectAttribute);
+        return;
+      }
     }
     viewComponent.setAttribute(connectAttribute, ALE_URI, myLayoutSpecManager.getComponentFor(connectToArea).ensureId());
   }
@@ -395,13 +455,15 @@ class LayoutSpecXmlWriter {
     Map<YTab, Edge> yTabEdgeMap = new HashMap<YTab, Edge>();
     Edge.fillEdges(myLayoutSpec.getAreas(), xTabEdgeMap, yTabEdgeMap);
 
+    List<Area> handledAreas = new ArrayList<Area>();
     for (Map.Entry<RadComponent, Area> entry : myLayoutSpecManager.getRadViewToAreaMap().entrySet()) {
       RadViewComponent viewComponent = (RadViewComponent)entry.getKey();
       Area area = entry.getValue();
-      writeSpecs(viewComponent, area, xTabEdgeMap, new LeftDirection());
-      writeSpecs(viewComponent, area, yTabEdgeMap, new TopDirection());
-      writeSpecs(viewComponent, area, xTabEdgeMap, new RightDirection());
-      writeSpecs(viewComponent, area, yTabEdgeMap, new BottomDirection());
+      writeSpecs(viewComponent, area, xTabEdgeMap, new LeftDirection(), handledAreas);
+      writeSpecs(viewComponent, area, yTabEdgeMap, new TopDirection(), handledAreas);
+      writeSpecs(viewComponent, area, xTabEdgeMap, new RightDirection(), handledAreas);
+      writeSpecs(viewComponent, area, yTabEdgeMap, new BottomDirection(), handledAreas);
+      handledAreas.add(area);
     }
   }
 
