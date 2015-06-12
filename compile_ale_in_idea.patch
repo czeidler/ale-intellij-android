@@ -1,0 +1,117 @@
+Index: community-main.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- community-main.iml	(revision 68170b1efd753eabd393008b703f06f67bdbe533)
++++ community-main.iml	(revision )
+@@ -117,5 +117,6 @@
+     <orderEntry type="module" module-name="json-tests" scope="TEST" />
+     <orderEntry type="module" module-name="typeMigration" />
+     <orderEntry type="module" module-name="sdk-updates" />
++    <orderEntry type="module" module-name="ale" />
+   </component>
+ </module>
+\ No newline at end of file
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/misc.xml	(revision 68170b1efd753eabd393008b703f06f67bdbe533)
++++ .idea/misc.xml	(revision )
+@@ -58,12 +58,11 @@
+   <component name="ProjectResources">
+     <default-html-doctype>http://www.w3.org/1999/xhtml</default-html-doctype>
+   </component>
+-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA jdk" project-jdk-type="JavaSDK">
++  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" default="false" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA jdk" project-jdk-type="JavaSDK">
+     <output url="file://$PROJECT_DIR$/out" />
+   </component>
+   <component name="SvnBranchConfigurationManager">
+     <option name="mySupportsUserInfoFilter" value="true" />
+   </component>
+   <component name="WebServicesPlugin" addRequiredLibraries="true" />
+-</project>
++</project>
+\ No newline at end of file
+-
+\ No newline at end of file
+Index: .idea/runConfigurations/IDEA.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/runConfigurations/IDEA.xml	(revision 68170b1efd753eabd393008b703f06f67bdbe533)
++++ .idea/runConfigurations/IDEA.xml	(revision )
+@@ -6,8 +6,8 @@
+     <option name="VM_PARAMETERS" value=" -ea -Xbootclasspath/p:../out/classes/production/boot -Xms384m -Xmx768m -Didea.is.internal=true -XX:MaxPermSize=384m " />
+     <option name="PROGRAM_PARAMETERS" value="" />
+     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/bin" />
+-    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+-    <option name="ALTERNATIVE_JRE_PATH" value="" />
++    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
++    <option name="ALTERNATIVE_JRE_PATH" value="1.8" />
+     <option name="ENABLE_SWING_INSPECTOR" value="false" />
+     <option name="ENV_VARIABLES" />
+     <option name="PASS_PARENT_ENVS" value="true" />
+\ No newline at end of file
+Index: .idea/modules.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/modules.xml	(revision 68170b1efd753eabd393008b703f06f67bdbe533)
++++ .idea/modules.xml	(revision )
+@@ -11,6 +11,7 @@
+       <module fileurl="file://$PROJECT_DIR$/RegExpSupport/RegExpSupport.iml" filepath="$PROJECT_DIR$/RegExpSupport/RegExpSupport.iml" group="platform" />
+       <module fileurl="file://$PROJECT_DIR$/plugins/ShortcutPromoter/ShortcutPromoter.iml" filepath="$PROJECT_DIR$/plugins/ShortcutPromoter/ShortcutPromoter.iml" group="plugins" />
+       <module fileurl="file://$PROJECT_DIR$/../adt/idea/adt-branding/adt-branding.iml" filepath="$PROJECT_DIR$/../adt/idea/adt-branding/adt-branding.iml" group="plugins/Android" />
++      <module fileurl="file://$PROJECT_DIR$/../ale/ale.iml" filepath="$PROJECT_DIR$/../ale/ale.iml" group="plugins" />
+       <module fileurl="file://$PROJECT_DIR$/platform/analysis-api/analysis-api.iml" filepath="$PROJECT_DIR$/platform/analysis-api/analysis-api.iml" group="platform" />
+       <module fileurl="file://$PROJECT_DIR$/platform/analysis-impl/analysis-impl.iml" filepath="$PROJECT_DIR$/platform/analysis-impl/analysis-impl.iml" group="platform" />
+       <module fileurl="file://$PROJECT_DIR$/../adt/idea/android/android.iml" filepath="$PROJECT_DIR$/../adt/idea/android/android.iml" group="plugins/Android" />
+\ No newline at end of file
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/vcs.xml	(revision 68170b1efd753eabd393008b703f06f67bdbe533)
++++ .idea/vcs.xml	(revision )
+@@ -3,9 +3,9 @@
+   <component name="VcsDirectoryMappings">
+     <mapping directory="" vcs="Git" />
+     <mapping directory="$PROJECT_DIR$/../adt/idea" vcs="Git" />
++    <mapping directory="$PROJECT_DIR$/../ale" vcs="Git" />
+     <mapping directory="$PROJECT_DIR$/../base" vcs="Git" />
+     <mapping directory="$PROJECT_DIR$/../studio/google/cloud/tools" vcs="Git" />
+     <mapping directory="$PROJECT_DIR$/../studio/google/login" vcs="Git" />
+   </component>
+-</project>
++</project>
+\ No newline at end of file
+-
+\ No newline at end of file
+Index: build/scripts/layouts.gant
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- build/scripts/layouts.gant	(revision 68170b1efd753eabd393008b703f06f67bdbe533)
++++ build/scripts/layouts.gant	(revision )
+@@ -600,6 +600,14 @@
+         }
+       }
+     }
++
++    pluginDir("ale") {
++      dir("lib") {
++        jar("ale.jar") {
++          module("ale")
++        }
++      }
++    }
+   }
+ }
+ 
