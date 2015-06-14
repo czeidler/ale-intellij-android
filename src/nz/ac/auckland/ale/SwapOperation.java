@@ -38,6 +38,11 @@ public class SwapOperation extends AbstractEditOperation {
   }
 
   @Override
+  public boolean canPerform() {
+    return true;
+  }
+
+  @Override
   public void perform() {
     XTab left = draggedArea.getLeft();
     YTab top = draggedArea.getTop();

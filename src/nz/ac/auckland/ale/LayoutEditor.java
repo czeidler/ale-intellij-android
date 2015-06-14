@@ -19,6 +19,7 @@ import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.linsolve.Variable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,9 +29,21 @@ public class LayoutEditor {
   final LayoutSpec layoutSpec;
   Map<XTab, Edge> xTabEdgeMap;
   Map<YTab, Edge> yTabEdgeMap;
+  // view / model coordinates
+  float modelViewScale = 1;
+  // tab width in view coordinates
+  float tabWidthView = 8;
 
   public LayoutEditor(LayoutSpec layoutSpec) {
     this.layoutSpec = layoutSpec;
+  }
+
+  public void setModelViewScale(float modelViewScale) {
+    this.modelViewScale = modelViewScale;
+  }
+
+  public float getModelViewScale() {
+    return modelViewScale;
   }
 
   /**
@@ -42,7 +55,7 @@ public class LayoutEditor {
    * @param dragY the drag y position
    * @return null if no suitable operation has been found
    */
-  public IEditOperation detectOperation(Area movedArea, Area.Rect dragRect, float dragX, float dragY) {
+  public IEditOperation detectDragOperation(Area movedArea, Area.Rect dragRect, float dragX, float dragY) {
     Area areaUnder = findContentAreaAt(dragX, dragY, movedArea);
     if (areaUnder == null)
       return null;
@@ -52,8 +65,13 @@ public class LayoutEditor {
     return null;
   }
 
-  public IEditOperation detectResizeOperation(Area moveArea, XTab movedXTab, YTab movedYTab) {
-    return ResizeOperation.detect(this, moveArea, movedXTab, movedYTab);
+  public IEditOperation detectResizeOperation(Area moveArea, XTab movedXTab, YTab movedYTab, float dragX, float dragY) {
+    return new ResizeOperation(this, moveArea, movedXTab, movedYTab, dragX, dragY);
+  }
+
+  public boolean isOverTab(Variable tab, float modelCoordinate) {
+    double diff = Math.abs(tab.getValue() - modelCoordinate);
+    return diff * getModelViewScale() < tabWidthView;
   }
 
   public Map<XTab, Edge> getXTabEdges() {
@@ -88,7 +106,7 @@ public class LayoutEditor {
     return null;
   }
 
-  private boolean contentAreaContains(Area area, float x, float y) {
+  public boolean contentAreaContains(Area area, float x, float y) {
     Area.Rect rect = area.getContentRect();
     if (rect.left > x || rect.right < x)
       return false;

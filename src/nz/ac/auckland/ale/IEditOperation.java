@@ -17,6 +17,7 @@ package nz.ac.auckland.ale;
 
 
 public interface IEditOperation {
+  boolean canPerform();
   void perform();
   IEditOperationFeedback getFeedback();
 }
