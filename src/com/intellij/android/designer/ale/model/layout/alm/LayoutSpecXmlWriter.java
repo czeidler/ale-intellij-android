@@ -24,10 +24,10 @@ import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.linsolve.Variable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -214,8 +214,8 @@ class LayoutSpecXmlWriter {
     return value;
   }
 
-  private <Tab> void writeSpecs(RadViewComponent viewComponent, Area area, Map<Tab, Edge> map, ITagDirection direction,
-                                List<Area> handledAreas) {
+  private <Tab> void writeSpecs(RadViewComponent viewComponent, Area area, Map<Tab, Edge> map, List<String> freeTabNames,
+                                ITagDirection direction, List<Area> handledAreas) {
     // border?
     if (direction.getTab(area) == direction.getTab(myLayoutSpec)) {
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
@@ -225,6 +225,7 @@ class LayoutSpecXmlWriter {
     }
 
     Edge edge = direction.getEdge(area, map);
+    assert edge != null;
     // tab
     XmlAttribute tabTag = viewComponent.getTag().getAttribute(direction.getTabTag(), ALE_URI);
     if (tabTag != null) {
@@ -240,6 +241,8 @@ class LayoutSpecXmlWriter {
       }
       if (!tabFound) {
         for (Area opNeighbour : opAreas) {
+          if (opNeighbour == area)
+            continue;
           if (getAttrValue(myLayoutSpecManager.getComponentFor(opNeighbour), direction.getTabTag()).equals(tabName)) {
             tabFound = true;
             break;
@@ -247,6 +250,8 @@ class LayoutSpecXmlWriter {
         }
       }
       if (tabFound) {
+        freeTabNames.add(tabName);
+        viewComponent.setAttribute(direction.getTabTag(), ALE_URI, tabName);
         clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
         clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
         return;
@@ -290,6 +295,7 @@ class LayoutSpecXmlWriter {
     String checkForDuplicatesAttribute;
     List<Area> checkForDuplicatesAreas;
     if (direction.getAreas(edge).size() > 0) {
+      // connect to
       connectToArea = direction.getAreas(edge).get(0);
       connectAttribute = direction.getConnectionTag();
       checkForDuplicatesAttribute = direction.getOppositeConnectionTag();
@@ -297,13 +303,25 @@ class LayoutSpecXmlWriter {
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
       clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
     }
-    else {
+    else if (direction.getOppositeAreas(edge).size() > 1) {
+      // align with
       connectToArea = direction.getOppositeAreas(edge).get(0);
+      // don't align with itself
+      if (connectToArea == area)
+        connectToArea = direction.getOppositeAreas(edge).get(1);
       connectAttribute = direction.getAlignTag();
       checkForDuplicatesAttribute = direction.getOppositeAlignTag();
       checkForDuplicatesAreas = direction.getOppositeAreas(edge);
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
       clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
+    } else {
+      // add tab
+      String uniqueTabName = getUniqueTabName(freeTabNames, direction.getTab(area));
+      freeTabNames.add(uniqueTabName);
+      viewComponent.setAttribute(direction.getTabTag(), ALE_URI, uniqueTabName);
+      clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
+      clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
+      return;
     }
     // Check for an existing valid connection and clear the attribute if there is one. This avoids redundant attributes.
     for (Area neighbour : checkForDuplicatesAreas) {
@@ -318,19 +336,41 @@ class LayoutSpecXmlWriter {
     viewComponent.setAttribute(connectAttribute, ALE_URI, myLayoutSpecManager.getComponentFor(connectToArea).ensureId());
   }
 
+  static private String getUniqueTabName(List<String> tabNames, Variable tab) {
+    String directionName;
+    if (tab instanceof XTab)
+      directionName = "x";
+    else
+      directionName = "y";
+    for (int i = 0; ; i++) {
+      String tabName = directionName + i;
+      boolean containsName = false;
+      for (String string : tabNames) {
+        if (string.equals(tabName)) {
+          containsName = true;
+          break;
+        }
+      }
+      if (!containsName)
+        return tabName;
+    }
+  }
+
   public void write() {
     LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
     Map<XTab, Edge> xTabEdgeMap = layoutEditor.getXTabEdges();
     Map<YTab, Edge> yTabEdgeMap = layoutEditor.getYTabEdges();
+    final List<String> freeXTabNames = new ArrayList<String>();
+    final List<String> freeYTabNames = new ArrayList<String>();
 
     List<Area> handledAreas = new ArrayList<Area>();
     for (Map.Entry<RadComponent, Area> entry : myLayoutSpecManager.getRadViewToAreaMap().entrySet()) {
       RadViewComponent viewComponent = (RadViewComponent)entry.getKey();
       Area area = entry.getValue();
-      writeSpecs(viewComponent, area, xTabEdgeMap, new LeftTagDirection(), handledAreas);
-      writeSpecs(viewComponent, area, yTabEdgeMap, new TopTagDirection(), handledAreas);
-      writeSpecs(viewComponent, area, xTabEdgeMap, new RightTagDirection(), handledAreas);
-      writeSpecs(viewComponent, area, yTabEdgeMap, new BottomTagDirection(), handledAreas);
+      writeSpecs(viewComponent, area, xTabEdgeMap, freeXTabNames, new LeftTagDirection(), handledAreas);
+      writeSpecs(viewComponent, area, yTabEdgeMap, freeYTabNames, new TopTagDirection(), handledAreas);
+      writeSpecs(viewComponent, area, xTabEdgeMap, freeXTabNames, new RightTagDirection(), handledAreas);
+      writeSpecs(viewComponent, area, yTabEdgeMap, freeYTabNames, new BottomTagDirection(), handledAreas);
       handledAreas.add(area);
     }
   }
