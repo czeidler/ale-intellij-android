@@ -50,7 +50,7 @@ public class ALMLayoutResizeOperation extends ALMLayoutOperation {
       movedYTab = moveArea.getTop();
     else if ((direction & Position.SOUTH) != 0)
       movedYTab = moveArea.getBottom();
-    LayoutEditor layoutEditor = new LayoutEditor(myLayoutSpecManager.getLayoutSpec());
+    LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
     myEditOperation = layoutEditor.detectResizeOperation(moveArea, movedXTab, movedYTab);
 
     myFeedbackPainter.repaint();

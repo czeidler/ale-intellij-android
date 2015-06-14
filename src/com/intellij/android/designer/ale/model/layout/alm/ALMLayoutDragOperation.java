@@ -44,7 +44,7 @@ public class ALMLayoutDragOperation extends ALMLayoutOperation {
     Point modelMouseLoc = LayoutSpecManager.toModel(layer, myLayoutSpecManager.getALMLayoutSpecs(), selection.getParent(),
                                                     myContext.getLocation());
 
-    LayoutEditor layoutEditor = new LayoutEditor(myLayoutSpecManager.getLayoutSpec());
+    LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
     myEditOperation = layoutEditor.detectOperation(moveArea, dragRect, modelMouseLoc.x, modelMouseLoc.y);
     myFeedbackPainter.setEditOperation(myEditOperation);
 

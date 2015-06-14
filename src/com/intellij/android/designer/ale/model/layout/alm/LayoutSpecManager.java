@@ -17,6 +17,7 @@ package com.intellij.android.designer.ale.model.layout.alm;
 
 import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.designer.model.RadComponent;
+import nz.ac.auckland.ale.LayoutEditor;
 import nz.ac.auckland.alm.*;
 
 import java.awt.*;
@@ -30,6 +31,7 @@ class LayoutSpecManager {
   RadComponent myLayout;
   IALMLayoutSpecs myALMLayoutSpecs;
   LayoutSpec myLayoutSpec;
+  LayoutEditor myLayoutEditor;
   final Map<RadComponent, Area> myRadViewToAreaMap = new HashMap<RadComponent, Area>();
   final Map<Area, RadComponent> myAreaToRadViewMap = new HashMap<Area, RadComponent>();
 
@@ -72,6 +74,8 @@ class LayoutSpecManager {
       myRadViewToAreaMap.put(viewComponent, clone);
       myAreaToRadViewMap.put(clone, viewComponent);
     }
+
+    myLayoutEditor = new LayoutEditor(myLayoutSpec);
   }
 
   public boolean isValid() {
@@ -92,6 +96,10 @@ class LayoutSpecManager {
 
   public LayoutSpec getLayoutSpec() {
     return myLayoutSpec;
+  }
+
+  public LayoutEditor getLayoutEditor() {
+    return myLayoutEditor;
   }
 
   public Map<RadComponent, Area> getRadViewToAreaMap() {

@@ -319,9 +319,9 @@ class LayoutSpecXmlWriter {
   }
 
   public void write() {
-    Map<XTab, Edge> xTabEdgeMap = new HashMap<XTab, Edge>();
-    Map<YTab, Edge> yTabEdgeMap = new HashMap<YTab, Edge>();
-    Edge.fillEdges(myLayoutSpec.getAreas(), xTabEdgeMap, yTabEdgeMap);
+    LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
+    Map<XTab, Edge> xTabEdgeMap = layoutEditor.getXTabEdges();
+    Map<YTab, Edge> yTabEdgeMap = layoutEditor.getYTabEdges();
 
     List<Area> handledAreas = new ArrayList<Area>();
     for (Map.Entry<RadComponent, Area> entry : myLayoutSpecManager.getRadViewToAreaMap().entrySet()) {

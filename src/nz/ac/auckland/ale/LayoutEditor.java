@@ -17,10 +17,17 @@ package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
+import nz.ac.auckland.alm.XTab;
+import nz.ac.auckland.alm.YTab;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class LayoutEditor {
   final LayoutSpec layoutSpec;
+  Map<XTab, Edge> xTabEdgeMap;
+  Map<YTab, Edge> yTabEdgeMap;
 
   public LayoutEditor(LayoutSpec layoutSpec) {
     this.layoutSpec = layoutSpec;
@@ -43,6 +50,28 @@ public class LayoutEditor {
       return SwapOperation.swap(this, movedArea, areaUnder);
 
     return null;
+  }
+
+  public IEditOperation detectResizeOperation(Area moveArea, XTab movedXTab, YTab movedYTab) {
+    return ResizeOperation.detect(this, moveArea, movedXTab, movedYTab);
+  }
+
+  public Map<XTab, Edge> getXTabEdges() {
+    if (xTabEdgeMap == null)
+      fillEdges();
+    return xTabEdgeMap;
+  }
+
+  public Map<YTab, Edge> getYTabEdges() {
+    if (yTabEdgeMap == null)
+      fillEdges();
+    return yTabEdgeMap;
+  }
+
+  private void fillEdges() {
+    xTabEdgeMap = new HashMap<XTab, Edge>();
+    yTabEdgeMap = new HashMap<YTab, Edge>();
+    Edge.fillEdges(layoutSpec.getAreas(), xTabEdgeMap, yTabEdgeMap);
   }
 
   public LayoutSpec getLayoutSpec() {
