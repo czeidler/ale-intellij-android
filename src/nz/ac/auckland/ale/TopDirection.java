@@ -15,13 +15,14 @@
  */
 package nz.ac.auckland.ale;
 
-
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
+import nz.ac.auckland.alm.YTab;
 import nz.ac.auckland.linsolve.Variable;
 
 import java.util.List;
 import java.util.Map;
+
 
 public class TopDirection implements IDirection {
   @Override
@@ -32,6 +33,11 @@ public class TopDirection implements IDirection {
   @Override
   public Variable getTab(Area area) {
     return area.getTop();
+  }
+
+  @Override
+  public Variable getOppositeTab(Area area) {
+    return area.getBottom();
   }
 
   @Override
@@ -47,6 +53,11 @@ public class TopDirection implements IDirection {
   @Override
   public List<Area> getOppositeAreas(Edge edge) {
     return edge.areas2;
+  }
+
+  @Override
+  public void setTab(Area area, Variable tab) {
+    area.setTo(area.getLeft(), (YTab)tab, area.getRight(), area.getBottom());
   }
 
 }

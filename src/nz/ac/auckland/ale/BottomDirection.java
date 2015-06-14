@@ -17,6 +17,7 @@ package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
+import nz.ac.auckland.alm.YTab;
 import nz.ac.auckland.linsolve.Variable;
 
 import java.util.List;
@@ -35,6 +36,11 @@ public class BottomDirection implements IDirection {
   }
 
   @Override
+  public Variable getOppositeTab(Area area) {
+    return area.getTop();
+  }
+
+  @Override
   public Variable getTab(LayoutSpec layoutSpec) {
     return layoutSpec.getBottom();
   }
@@ -47,6 +53,11 @@ public class BottomDirection implements IDirection {
   @Override
   public List<Area> getOppositeAreas(Edge edge) {
     return edge.areas1;
+  }
+
+  @Override
+  public void setTab(Area area, Variable tab) {
+    area.setTo(area.getLeft(), area.getTop(), area.getRight(), (YTab)tab);
   }
 
 }

@@ -17,6 +17,7 @@ package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
+import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.linsolve.Variable;
 
 import java.util.List;
@@ -35,6 +36,11 @@ public class RightDirection implements IDirection {
   }
 
   @Override
+  public Variable getOppositeTab(Area area) {
+    return area.getLeft();
+  }
+
+  @Override
   public Variable getTab(LayoutSpec layoutSpec) {
     return layoutSpec.getRight();
   }
@@ -47,6 +53,11 @@ public class RightDirection implements IDirection {
   @Override
   public List<Area> getOppositeAreas(Edge edge) {
     return edge.areas1;
+  }
+
+  @Override
+  public void setTab(Area area, Variable tab) {
+    area.setTo(area.getLeft(), area.getTop(), (XTab)tab, area.getBottom());
   }
 
 }
