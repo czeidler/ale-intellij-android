@@ -19,11 +19,11 @@ import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.designer.model.RadComponent;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlTag;
+import nz.ac.auckland.ale.*;
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
-import nz.ac.auckland.linsolve.Variable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -51,39 +51,7 @@ class LayoutSpecXmlWriter {
 
   public static final String ALE_URI = AUTO_URI;
 
-  static class Edge {
-    public List<Area> areas1 = new ArrayList<Area>();
-    public List<Area> areas2 = new ArrayList<Area>();
-
-    static private <Tab> Edge getEdge(Tab tab, Map<Tab, Edge> map) {
-      Edge edge = map.get(tab);
-      if (edge != null)
-        return edge;
-      edge = new Edge();
-      map.put(tab, edge);
-      return edge;
-    }
-
-    static public void fillEdges(List<Area> areas, Map<XTab, Edge> xMap, Map<YTab, Edge> yMap) {
-      for (Area area : areas) {
-        Edge leftEdge = getEdge(area.getLeft(), xMap);
-        leftEdge.areas2.add(area);
-        Edge topEdge = getEdge(area.getTop(), yMap);
-        topEdge.areas2.add(area);
-        Edge rightEdge = getEdge(area.getRight(), xMap);
-        rightEdge.areas1.add(area);
-        Edge bottomEdge = getEdge(area.getBottom(), yMap);
-        bottomEdge.areas1.add(area);
-      }
-    }
-  }
-
-  interface IDirection {
-    <Tab> Edge getEdge(Area area, Map<Tab, Edge> map);
-    Variable getTab(Area area);
-    Variable getTab(LayoutSpec layoutSpec);
-    List<Area> getAreas(Edge edge);
-    List<Area> getOppositeAreas(Edge edge);
+  interface ITagDirection extends IDirection {
     String getTabTag();
     String getOppositeTabTag();
     String getConnectionTag();
@@ -92,32 +60,7 @@ class LayoutSpecXmlWriter {
     String getOppositeAlignTag();
   }
 
-  static class LeftDirection implements IDirection {
-    @Override
-    public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
-      return map.get(area.getLeft());
-    }
-
-    @Override
-    public Variable getTab(Area area) {
-      return area.getLeft();
-    }
-
-    @Override
-    public Variable getTab(LayoutSpec layoutSpec) {
-      return layoutSpec.getLeft();
-    }
-
-    @Override
-    public List<Area> getAreas(Edge edge) {
-      return edge.areas1;
-    }
-
-    @Override
-    public List<Area> getOppositeAreas(Edge edge) {
-      return edge.areas2;
-    }
-
+  static class LeftTagDirection extends LeftDirection implements ITagDirection {
     @Override
     public String getTabTag() {
       return ATTR_LAYOUT_LEFT_TAB;
@@ -149,32 +92,7 @@ class LayoutSpecXmlWriter {
     }
   }
 
-  static class RightDirection implements IDirection {
-    @Override
-    public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
-      return map.get(area.getRight());
-    }
-
-    @Override
-    public Variable getTab(Area area) {
-      return area.getRight();
-    }
-
-    @Override
-    public Variable getTab(LayoutSpec layoutSpec) {
-      return layoutSpec.getRight();
-    }
-
-    @Override
-    public List<Area> getAreas(Edge edge) {
-      return edge.areas2;
-    }
-
-    @Override
-    public List<Area> getOppositeAreas(Edge edge) {
-      return edge.areas1;
-    }
-
+  static class RightTagDirection extends RightDirection implements ITagDirection {
     @Override
     public String getTabTag() {
       return ATTR_LAYOUT_RIGHT_TAB;
@@ -206,32 +124,7 @@ class LayoutSpecXmlWriter {
     }
   }
 
-  static class TopDirection implements IDirection {
-    @Override
-    public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
-      return map.get(area.getTop());
-    }
-
-    @Override
-    public Variable getTab(Area area) {
-      return area.getTop();
-    }
-
-    @Override
-    public Variable getTab(LayoutSpec layoutSpec) {
-      return layoutSpec.getTop();
-    }
-
-    @Override
-    public List<Area> getAreas(Edge edge) {
-      return edge.areas1;
-    }
-
-    @Override
-    public List<Area> getOppositeAreas(Edge edge) {
-      return edge.areas2;
-    }
-
+  static class TopTagDirection extends TopDirection implements ITagDirection {
     @Override
     public String getTabTag() {
       return ATTR_LAYOUT_TOP_TAB;
@@ -263,32 +156,7 @@ class LayoutSpecXmlWriter {
     }
   }
 
-  static class BottomDirection implements IDirection {
-    @Override
-    public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
-      return map.get(area.getBottom());
-    }
-
-    @Override
-    public Variable getTab(Area area) {
-      return area.getBottom();
-    }
-
-    @Override
-    public Variable getTab(LayoutSpec layoutSpec) {
-      return layoutSpec.getBottom();
-    }
-
-    @Override
-    public List<Area> getAreas(Edge edge) {
-      return edge.areas2;
-    }
-
-    @Override
-    public List<Area> getOppositeAreas(Edge edge) {
-      return edge.areas1;
-    }
-
+  static class BottomTagDirection extends BottomDirection implements ITagDirection {
     @Override
     public String getTabTag() {
       return ATTR_LAYOUT_BOTTOM_TAB;
@@ -346,7 +214,7 @@ class LayoutSpecXmlWriter {
     return value;
   }
 
-  private <Tab> void writeSpecs(RadViewComponent viewComponent, Area area, Map<Tab, Edge> map, IDirection direction,
+  private <Tab> void writeSpecs(RadViewComponent viewComponent, Area area, Map<Tab, Edge> map, ITagDirection direction,
                                 List<Area> handledAreas) {
     // border?
     if (direction.getTab(area) == direction.getTab(myLayoutSpec)) {
@@ -459,10 +327,10 @@ class LayoutSpecXmlWriter {
     for (Map.Entry<RadComponent, Area> entry : myLayoutSpecManager.getRadViewToAreaMap().entrySet()) {
       RadViewComponent viewComponent = (RadViewComponent)entry.getKey();
       Area area = entry.getValue();
-      writeSpecs(viewComponent, area, xTabEdgeMap, new LeftDirection(), handledAreas);
-      writeSpecs(viewComponent, area, yTabEdgeMap, new TopDirection(), handledAreas);
-      writeSpecs(viewComponent, area, xTabEdgeMap, new RightDirection(), handledAreas);
-      writeSpecs(viewComponent, area, yTabEdgeMap, new BottomDirection(), handledAreas);
+      writeSpecs(viewComponent, area, xTabEdgeMap, new LeftTagDirection(), handledAreas);
+      writeSpecs(viewComponent, area, yTabEdgeMap, new TopTagDirection(), handledAreas);
+      writeSpecs(viewComponent, area, xTabEdgeMap, new RightTagDirection(), handledAreas);
+      writeSpecs(viewComponent, area, yTabEdgeMap, new BottomTagDirection(), handledAreas);
       handledAreas.add(area);
     }
   }
