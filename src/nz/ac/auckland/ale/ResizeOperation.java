@@ -19,38 +19,40 @@ package nz.ac.auckland.ale;
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.linsolve.Variable;
 
-public class SwapOperation extends AbstractEditOperation {
-  Area draggedArea;
+public class ResizeOperation extends AbstractEditOperation {
   Area targetArea;
+  Variable targetTab;
 
-  static public SwapOperation swap(LayoutEditor layoutEditor, Area draggedArea, Area area) {
-    if (draggedArea == area)
+  static public ResizeOperation detect(LayoutEditor layoutEditor, Area movedArea, XTab xTab, YTab yTab) {
+    ResizeOperation resizeOperation = new ResizeOperation(layoutEditor);
+    if (!resizeOperation.detect(movedArea, xTab, yTab))
       return null;
-    return new SwapOperation(layoutEditor, draggedArea, area);
+    return resizeOperation;
   }
 
-  private SwapOperation(LayoutEditor layoutEditor, Area draggedArea, Area area) {
+  private ResizeOperation(LayoutEditor layoutEditor) {
     super(layoutEditor);
+  }
 
-    this.draggedArea = draggedArea;
-    this.targetArea = area;
+  private boolean detect(Area movedArea, XTab xTab, YTab yTab) {
+
+    return false;
   }
 
   @Override
   public void perform() {
-    XTab left = draggedArea.getLeft();
-    YTab top = draggedArea.getTop();
-    XTab right = draggedArea.getRight();
-    YTab bottom = draggedArea.getBottom();
 
-    draggedArea.setTo(targetArea.getLeft(), targetArea.getTop(), targetArea.getRight(), targetArea.getBottom());
-    targetArea.setTo(left, top, right, bottom);
   }
 
   public class Feedback implements IEditOperationFeedback {
     public Area getTargetArea() {
       return targetArea;
+    }
+
+    public Variable getTargetTab() {
+      return targetTab;
     }
   }
 

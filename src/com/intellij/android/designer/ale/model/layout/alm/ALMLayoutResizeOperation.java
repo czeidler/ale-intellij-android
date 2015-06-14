@@ -15,8 +15,14 @@
  */
 package com.intellij.android.designer.ale.model.layout.alm;
 
+import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.designer.designSurface.OperationContext;
 import com.intellij.designer.model.RadComponent;
+import com.intellij.designer.utils.Position;
+import nz.ac.auckland.ale.LayoutEditor;
+import nz.ac.auckland.alm.Area;
+import nz.ac.auckland.alm.XTab;
+import nz.ac.auckland.alm.YTab;
 
 
 public class ALMLayoutResizeOperation extends ALMLayoutOperation {
@@ -29,5 +35,24 @@ public class ALMLayoutResizeOperation extends ALMLayoutOperation {
   @Override
   public void showFeedback() {
     super.showFeedback();
+
+    RadViewComponent selection = RadViewComponent.getViewComponents(myComponents).get(0);
+    Area moveArea = myLayoutSpecManager.getAreaFor(selection);
+
+    int direction = myContext.getResizeDirection();
+    XTab movedXTab = null;
+    YTab movedYTab = null;
+    if ((direction & Position.WEST) != 0)
+      movedXTab = moveArea.getLeft();
+    else if ((direction & Position.EAST) != 0)
+      movedXTab = moveArea.getRight();
+    if ((direction & Position.NORTH) != 0)
+      movedYTab = moveArea.getTop();
+    else if ((direction & Position.SOUTH) != 0)
+      movedYTab = moveArea.getBottom();
+    LayoutEditor layoutEditor = new LayoutEditor(myLayoutSpecManager.getLayoutSpec());
+    myEditOperation = layoutEditor.detectResizeOperation(moveArea, movedXTab, movedYTab);
+
+    myFeedbackPainter.repaint();
   }
 }

@@ -36,17 +36,15 @@ public class ALMLayoutDragOperation extends ALMLayoutOperation {
 
     FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
 
-
     RadViewComponent selection = RadViewComponent.getViewComponents(myComponents).get(0);
-
-    LayoutEditor layoutEditor = new LayoutEditor(myLayoutSpecManager.getLayoutSpec());
     Area moveArea = myLayoutSpecManager.getAreaFor(selection);
     Rectangle selectionRect = selection.getBounds();
     Area.Rect dragRect = new Area.Rect(selectionRect.x, selectionRect.y, selectionRect.x + selectionRect.width,
                                        selectionRect.y + selectionRect.height);
-
     Point modelMouseLoc = LayoutSpecManager.toModel(layer, myLayoutSpecManager.getALMLayoutSpecs(), selection.getParent(),
                                                     myContext.getLocation());
+
+    LayoutEditor layoutEditor = new LayoutEditor(myLayoutSpecManager.getLayoutSpec());
     myEditOperation = layoutEditor.detectOperation(moveArea, dragRect, modelMouseLoc.x, modelMouseLoc.y);
     myFeedbackPainter.setEditOperation(myEditOperation);
 

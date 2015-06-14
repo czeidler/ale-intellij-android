@@ -17,9 +17,11 @@ package com.intellij.android.designer.ale.model.layout.alm;
 
 import com.intellij.android.designer.designSurface.graphics.DesignerGraphics;
 import com.intellij.android.designer.model.RadViewComponent;
+import com.intellij.designer.model.RadVisualComponent;
 import nz.ac.auckland.ale.IEditOperation;
 import nz.ac.auckland.ale.IEditOperationFeedback;
-import nz.ac.auckland.ale.SwapOperationFeedback;
+import nz.ac.auckland.ale.ResizeOperation;
+import nz.ac.auckland.ale.SwapOperation;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -58,12 +60,14 @@ class FeedbackPainter extends JComponent {
       return;
     IEditOperationFeedback editOperationFeedback = myEditOperation.getFeedback();
 
-    if (editOperationFeedback instanceof SwapOperationFeedback) {
-      SwapOperationFeedback swapFeedback = (SwapOperationFeedback)editOperationFeedback;
-      RadViewComponent target = myLayoutSpecManager.getComponentFor(swapFeedback.getTargetArea());
+    if (editOperationFeedback instanceof SwapOperation.Feedback) {
+      SwapOperation.Feedback swapFeedback = (SwapOperation.Feedback)editOperationFeedback;
+      RadVisualComponent target = myLayoutSpecManager.getComponentFor(swapFeedback.getTargetArea());
 
       Rectangle targetRect = target.fromModel(getParent(), target.getBounds());
       graphics.drawRect(targetRect.x, targetRect.y, targetRect.width, targetRect.height);
+    } else if (editOperationFeedback instanceof ResizeOperation.Feedback) {
+      ResizeOperation.Feedback feedback = (ResizeOperation.Feedback)editOperationFeedback;
     }
   }
 }
