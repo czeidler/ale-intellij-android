@@ -115,7 +115,7 @@ public class LayoutEditor {
   private void fillEdges() {
     xTabEdgeMap.clear();
     yTabEdgeMap.clear();
-    Edge.fillEdges(layoutSpec.getAreas(), xTabEdgeMap, yTabEdgeMap);
+    Edge.fillEdges(layoutSpec, xTabEdgeMap, yTabEdgeMap);
   }
 
   public LayoutSpec getLayoutSpec() {

@@ -16,6 +16,7 @@
 package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.Area;
+import nz.ac.auckland.alm.LayoutSpec;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
 import nz.ac.auckland.linsolve.Variable;
@@ -48,8 +49,8 @@ public class Edge {
     return false;
   }
 
-  static public void fillEdges(List<Area> areas, Map<XTab, Edge> xMap, Map<YTab, Edge> yMap) {
-    for (Area area : areas) {
+  static public void fillEdges(LayoutSpec layoutSpec, Map<XTab, Edge> xMap, Map<YTab, Edge> yMap) {
+    for (Area area : layoutSpec.getAreas()) {
       Edge leftEdge = getEdge(area.getLeft(), xMap);
       leftEdge.areas2.add(area);
       Edge topEdge = getEdge(area.getTop(), yMap);
@@ -59,5 +60,10 @@ public class Edge {
       Edge bottomEdge = getEdge(area.getBottom(), yMap);
       bottomEdge.areas1.add(area);
     }
+    // ensure that the border tabs are in the map
+    getEdge(layoutSpec.getLeft(), xMap);
+    getEdge(layoutSpec.getTop(), yMap);
+    getEdge(layoutSpec.getRight(), xMap);
+    getEdge(layoutSpec.getBottom(), yMap);
   }
 }
