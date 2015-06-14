@@ -27,8 +27,10 @@ import java.util.Map;
 
 public class LayoutEditor {
   final LayoutSpec layoutSpec;
-  Map<XTab, Edge> xTabEdgeMap;
-  Map<YTab, Edge> yTabEdgeMap;
+  final Map<XTab, Edge> xTabEdgeMap = new HashMap<XTab, Edge>();
+  final Map<YTab, Edge> yTabEdgeMap = new HashMap<YTab, Edge>();
+  boolean edgesValid = false;
+  IEditOperation currentEditOperation;
   // view / model coordinates
   float modelViewScale = 1;
   // tab width in view coordinates
@@ -50,6 +52,17 @@ public class LayoutEditor {
     this.tabWidthView = tabWidthView;
   }
 
+  public boolean canPerform() {
+    if (currentEditOperation != null && currentEditOperation.canPerform())
+      return true;
+    return false;
+  }
+
+  public void perform() {
+    currentEditOperation.perform();
+    edgesValid = false;
+  }
+
   /**
    * Find edit operation.
    *
@@ -61,16 +74,21 @@ public class LayoutEditor {
    */
   public IEditOperation detectDragOperation(Area movedArea, Area.Rect dragRect, float dragX, float dragY) {
     Area areaUnder = findContentAreaAt(dragX, dragY, movedArea);
-    if (areaUnder == null)
+    if (areaUnder == null) {
+      currentEditOperation = null;
       return null;
-    if (movedArea != null)
-      return SwapOperation.swap(this, movedArea, areaUnder);
+    }
+    if (movedArea != null) {
+      currentEditOperation = SwapOperation.swap(this, movedArea, areaUnder);
+      return currentEditOperation;
+    }
 
     return null;
   }
 
   public IEditOperation detectResizeOperation(Area moveArea, XTab movedXTab, YTab movedYTab, float dragX, float dragY) {
-    return new ResizeOperation(this, moveArea, movedXTab, movedYTab, dragX, dragY);
+    currentEditOperation = new ResizeOperation(this, moveArea, movedXTab, movedYTab, dragX, dragY);
+    return currentEditOperation;
   }
 
   public boolean isOverTab(Variable tab, float modelCoordinate) {
@@ -79,20 +97,24 @@ public class LayoutEditor {
   }
 
   public Map<XTab, Edge> getXTabEdges() {
-    if (xTabEdgeMap == null)
+    if (!edgesValid) {
       fillEdges();
+      edgesValid = true;
+    }
     return xTabEdgeMap;
   }
 
   public Map<YTab, Edge> getYTabEdges() {
-    if (yTabEdgeMap == null)
+    if (!edgesValid) {
       fillEdges();
+      edgesValid = true;
+    }
     return yTabEdgeMap;
   }
 
   private void fillEdges() {
-    xTabEdgeMap = new HashMap<XTab, Edge>();
-    yTabEdgeMap = new HashMap<YTab, Edge>();
+    xTabEdgeMap.clear();
+    yTabEdgeMap.clear();
     Edge.fillEdges(layoutSpec.getAreas(), xTabEdgeMap, yTabEdgeMap);
   }
 
