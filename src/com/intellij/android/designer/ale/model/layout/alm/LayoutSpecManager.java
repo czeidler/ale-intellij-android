@@ -76,6 +76,10 @@ class LayoutSpecManager {
     }
 
     myLayoutEditor = new LayoutEditor(myLayoutSpec);
+    float view = layout.getBounds().width;
+    float model = (float)(almLayoutSpecs.getRightTab().getValue() - almLayoutSpecs.getLeftTab().getValue());
+    myLayoutEditor.setModelViewScale(view / model);
+    myLayoutEditor.setTabWidthView(8);
   }
 
   public boolean isValid() {

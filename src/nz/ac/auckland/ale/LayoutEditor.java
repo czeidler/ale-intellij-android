@@ -46,6 +46,10 @@ public class LayoutEditor {
     return modelViewScale;
   }
 
+  public void setTabWidthView(float tabWidthView) {
+    this.tabWidthView = tabWidthView;
+  }
+
   /**
    * Find edit operation.
    *
