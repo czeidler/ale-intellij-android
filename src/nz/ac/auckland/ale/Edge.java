@@ -18,6 +18,7 @@ package nz.ac.auckland.ale;
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.linsolve.Variable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,17 @@ public class Edge {
     edge = new Edge();
     map.put(tab, edge);
     return edge;
+  }
+
+  static public  <Tab extends Variable> boolean isInChain(Edge edge, Variable tab, Map<Tab, Edge> edges, IDirection direction) {
+    for (Area area : direction.getAreas(edge)) {
+      Variable currentTab = direction.getTab(area);
+      if (currentTab == tab)
+        return true;
+      if (isInChain(edges.get(currentTab), tab, edges, direction))
+        return true;
+    }
+    return false;
   }
 
   static public void fillEdges(List<Area> areas, Map<XTab, Edge> xMap, Map<YTab, Edge> yMap) {

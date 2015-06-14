@@ -118,6 +118,18 @@ class LayoutSpecManager {
     return myALMLayoutSpecs;
   }
 
+  public Rectangle fromModel(Component layer, Area.Rect rect) {
+    return fromModel(layer, myALMLayoutSpecs, myLayout, rect);
+  }
+
+  public Point fromModel(Component layer, Point point) {
+    return fromModel(layer, myALMLayoutSpecs, myLayout, point);
+  }
+
+  public Point toModel(Component layer, Point point) {
+    return toModel(layer, myALMLayoutSpecs, myLayout, point);
+  }
+
   static public Rectangle fromModel(Component layer, IALMLayoutSpecs almLayoutSpecs, RadComponent layout, Area.Rect rect) {
     Rectangle areaBounds = new Rectangle(Math.round(rect.left), Math.round(rect.top), Math.round(rect.getWidth()),
                                          Math.round(rect.getHeight()));
@@ -131,6 +143,19 @@ class LayoutSpecManager {
     double offsetY = layoutBounds.getY() - aleLayoutBounds.getY();
     areaBounds.translate((int)offsetX, (int)offsetY);
     return areaBounds;
+  }
+
+  static public Point fromModel(Component layer, IALMLayoutSpecs almLayoutSpecs, RadComponent layout, Point point) {
+    Rectangle aleLayoutBounds = new Rectangle((int)almLayoutSpecs.getLeftTab().getValue(), (int)almLayoutSpecs.getTopTab().getValue(),
+                                              (int)(almLayoutSpecs.getRightTab().getValue() - almLayoutSpecs.getLeftTab().getValue()),
+                                              (int)(almLayoutSpecs.getBottomTab().getValue() - almLayoutSpecs.getTopTab().getValue()));
+    final Rectangle layoutBounds = layout.fromModel(layer, layout.getBounds());
+    aleLayoutBounds = layout.fromModel(layer, aleLayoutBounds);
+    Point pointView = layout.fromModel(layer, point);
+    double offsetX = layoutBounds.getX() - aleLayoutBounds.getX();
+    double offsetY = layoutBounds.getY() - aleLayoutBounds.getY();
+    pointView.translate((int)offsetX, (int)offsetY);
+    return pointView;
   }
 
   static public Point toModel(Component layer, IALMLayoutSpecs almLayoutSpecs, RadComponent layout, Point point) {
