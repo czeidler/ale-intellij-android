@@ -16,11 +16,15 @@
 package com.intellij.android.designer.ale.model.layout.alm;
 
 import com.intellij.android.designer.designSurface.AbstractEditOperation;
+import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.designer.designSurface.FeedbackLayer;
 import com.intellij.designer.designSurface.OperationContext;
 import com.intellij.designer.model.RadComponent;
 import com.intellij.openapi.application.ApplicationManager;
 import nz.ac.auckland.ale.IEditOperation;
+import nz.ac.auckland.alm.Area;
+
+import java.awt.*;
 
 
 class ALMLayoutOperation extends AbstractEditOperation {
@@ -62,7 +66,7 @@ class ALMLayoutOperation extends AbstractEditOperation {
 
   @Override
   public void execute() throws Exception {
-    if (myEditOperation == null) {
+    if (myEditOperation == null && myEditOperation.canPerform()) {
       super.execute();
       return;
     }
@@ -76,5 +80,11 @@ class ALMLayoutOperation extends AbstractEditOperation {
         myLayoutSpecManager.invalidate();
       }
     });
+  }
+
+  protected Point getModelMousePosition() {
+    FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
+    RadViewComponent selection = RadViewComponent.getViewComponents(myComponents).get(0);
+    return LayoutSpecManager.toModel(layer, myLayoutSpecManager.getALMLayoutSpecs(), selection.getParent(), myContext.getLocation());
   }
 }

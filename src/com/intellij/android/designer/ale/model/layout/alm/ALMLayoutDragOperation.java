@@ -41,11 +41,10 @@ public class ALMLayoutDragOperation extends ALMLayoutOperation {
     Rectangle selectionRect = selection.getBounds();
     Area.Rect dragRect = new Area.Rect(selectionRect.x, selectionRect.y, selectionRect.x + selectionRect.width,
                                        selectionRect.y + selectionRect.height);
-    Point modelMouseLoc = LayoutSpecManager.toModel(layer, myLayoutSpecManager.getALMLayoutSpecs(), selection.getParent(),
-                                                    myContext.getLocation());
+    Point modelMouseLocation = getModelMousePosition();
 
     LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
-    myEditOperation = layoutEditor.detectOperation(moveArea, dragRect, modelMouseLoc.x, modelMouseLoc.y);
+    myEditOperation = layoutEditor.detectDragOperation(moveArea, dragRect, modelMouseLocation.x, modelMouseLocation.y);
     myFeedbackPainter.setEditOperation(myEditOperation);
 
     final Rectangle dragRectView = selection.fromModel(layer, selectionRect);

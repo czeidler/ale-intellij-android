@@ -24,6 +24,8 @@ import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
 
+import java.awt.*;
+
 
 public class ALMLayoutResizeOperation extends ALMLayoutOperation {
   public static final String TYPE = "alm_resize";
@@ -51,7 +53,8 @@ public class ALMLayoutResizeOperation extends ALMLayoutOperation {
     else if ((direction & Position.SOUTH) != 0)
       movedYTab = moveArea.getBottom();
     LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
-    myEditOperation = layoutEditor.detectResizeOperation(moveArea, movedXTab, movedYTab);
+    Point modelMouseLocation = getModelMousePosition();
+    myEditOperation = layoutEditor.detectResizeOperation(moveArea, movedXTab, movedYTab, modelMouseLocation.x, modelMouseLocation.y);
 
     myFeedbackPainter.repaint();
   }
