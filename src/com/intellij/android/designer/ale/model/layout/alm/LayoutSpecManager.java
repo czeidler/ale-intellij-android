@@ -80,6 +80,7 @@ class LayoutSpecManager {
     float model = (float)(almLayoutSpecs.getRightTab().getValue() - almLayoutSpecs.getLeftTab().getValue());
     myLayoutEditor.setModelViewScale(view / model);
     myLayoutEditor.setTabWidthView(8);
+    myLayoutEditor.setDetachThresholdView(80);
   }
 
   public boolean isValid() {

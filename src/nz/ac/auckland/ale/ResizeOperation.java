@@ -57,13 +57,15 @@ public class ResizeOperation extends AbstractEditOperation {
     if (xDirection != null) {
       getResizeCandidateTabs(xCandidates, resizeArea, layoutEditor.getXTabEdges(), xDirection);
       targetXTab = getTabAt(xCandidates, x);
-      if (targetXTab == null && layoutEditor.contentAreaContains(resizeArea, x, y))
+      if (targetXTab == null && !layoutEditor.isOverTab(xDirection.getTab(resizeArea), x) && resizeArea.getRect().contains(x, y)
+          && Math.abs(xDirection.getTab(resizeArea).getValue() - x) < layoutEditor.getDetachThresholdModel())
         detachX = true;
     }
     if (yDirection != null) {
       getResizeCandidateTabs(yCandidates, resizeArea, layoutEditor.getYTabEdges(), yDirection);
       targetYTab = getTabAt(yCandidates, y);
-      if (targetYTab == null && layoutEditor.contentAreaContains(resizeArea, x, y))
+      if (targetYTab == null && !layoutEditor.isOverTab(yDirection.getTab(resizeArea), y) && resizeArea.getRect().contains(x, y)
+          && Math.abs(yDirection.getTab(resizeArea).getValue() - y) < layoutEditor.getDetachThresholdModel())
         detachY = true;
     }
   }

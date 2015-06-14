@@ -35,6 +35,7 @@ public class LayoutEditor {
   float modelViewScale = 1;
   // tab width in view coordinates
   float tabWidthView = 8;
+  float detachThresholdView = 80;
 
   public LayoutEditor(LayoutSpec layoutSpec) {
     this.layoutSpec = layoutSpec;
@@ -50,6 +51,14 @@ public class LayoutEditor {
 
   public void setTabWidthView(float tabWidthView) {
     this.tabWidthView = tabWidthView;
+  }
+
+  public void setDetachThresholdView(float detachThresholdView) {
+    this.detachThresholdView = detachThresholdView;
+  }
+
+  public float getDetachThresholdModel() {
+    return detachThresholdView * getModelViewScale();
   }
 
   public boolean canPerform() {
@@ -126,18 +135,9 @@ public class LayoutEditor {
     for (Area area : layoutSpec.getAreas()) {
       if (area == veto)
         continue;
-      if (contentAreaContains(area, x, y))
+      if (area.getContentRect().contains(x, y))
         return area;
     }
     return null;
-  }
-
-  public boolean contentAreaContains(Area area, float x, float y) {
-    Area.Rect rect = area.getContentRect();
-    if (rect.left > x || rect.right < x)
-      return false;
-    if (rect.top > y || rect.bottom < y)
-      return false;
-    return true;
   }
 }
