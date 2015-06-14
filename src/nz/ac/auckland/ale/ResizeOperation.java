@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.Map;
 
 public class ResizeOperation extends AbstractEditOperation {
-  Area targetArea;
-  List<XTab> xCandidates;
-  List<YTab> yCandidates;
+  final Area resizeArea;
+  final List<XTab> xCandidates = new ArrayList<XTab>();
+  final List<YTab> yCandidates = new ArrayList<YTab>();
   XTab targetXTab;
   YTab targetYTab;
   boolean detachX = false;
@@ -39,28 +39,29 @@ public class ResizeOperation extends AbstractEditOperation {
   public ResizeOperation(LayoutEditor layoutEditor, Area resizeArea, XTab xTab, YTab yTab, float x, float y) {
     super(layoutEditor);
 
+    this.resizeArea = resizeArea;
     if (xTab != null) {
       if (resizeArea.getLeft() == xTab)
         xDirection = new LeftDirection();
       else if (resizeArea.getRight() == xTab)
         xDirection = new RightDirection();
+      assert xDirection != null;
     }
-    assert xDirection != null;
-    if (xTab != null) {
+    if (yTab != null) {
       if (resizeArea.getTop() == yTab)
         yDirection = new TopDirection();
       else if (resizeArea.getBottom() == yTab)
         yDirection = new BottomDirection();
+      assert yDirection != null;
     }
-    assert yDirection != null;
     if (xDirection != null) {
-      xCandidates = getResizeCandidateTabs(resizeArea, layoutEditor.getXTabEdges(), xDirection);
+      getResizeCandidateTabs(xCandidates, resizeArea, layoutEditor.getXTabEdges(), xDirection);
       targetXTab = getTabAt(xCandidates, x);
       if (targetXTab == null && layoutEditor.contentAreaContains(resizeArea, x, y))
         detachX = true;
     }
     if (yDirection != null) {
-      yCandidates = getResizeCandidateTabs(resizeArea, layoutEditor.getYTabEdges(), yDirection);
+      getResizeCandidateTabs(yCandidates, resizeArea, layoutEditor.getYTabEdges(), yDirection);
       targetYTab = getTabAt(yCandidates, y);
       if (targetYTab == null && layoutEditor.contentAreaContains(resizeArea, x, y))
         detachY = true;
@@ -75,27 +76,15 @@ public class ResizeOperation extends AbstractEditOperation {
     return null;
   }
 
-  private <Tab extends Variable> List<Tab> getResizeCandidateTabs(Area area, Map<Tab, Edge> edges, IDirection direction) {
-    List<Tab> candidates = new ArrayList<Tab>();
+  private <Tab extends Variable> void getResizeCandidateTabs(List<Tab> candidates, Area area, Map<Tab, Edge> edges, IDirection direction) {
+    candidates.clear();
     for (Map.Entry<Tab, Edge> entry : edges.entrySet()) {
       Tab currentTab = entry.getKey();
       if (currentTab == direction.getTab(area) || currentTab == direction.getOppositeTab(area))
         continue;
-      if (!isInChain(edges.get(currentTab), direction.getOppositeTab(area), edges, direction))
+      if (!Edge.isInChain(edges.get(currentTab), direction.getOppositeTab(area), edges, direction))
         candidates.add(currentTab);
     }
-    return candidates;
-  }
-
-  private <Tab extends Variable> boolean isInChain(Edge edge, Variable tab, Map<Tab, Edge> edges, IDirection direction) {
-    for (Area area : direction.getAreas(edge)) {
-      Variable currentTab = direction.getTab(area);
-      if (currentTab == tab)
-        return true;
-      if (isInChain(edges.get(currentTab), tab, edges, direction))
-        return true;
-    }
-    return false;
   }
 
   @Override
@@ -114,16 +103,12 @@ public class ResizeOperation extends AbstractEditOperation {
     if (detachY)
       yTab = new YTab();
     if (xTab != null)
-      xDirection.setTab(targetArea, xTab);
+      xDirection.setTab(resizeArea, xTab);
     if (yTab != null)
-      yDirection.setTab(targetArea, yTab);
+      yDirection.setTab(resizeArea, yTab);
   }
 
   public class Feedback implements IEditOperationFeedback {
-    public Area getTargetArea() {
-      return targetArea;
-    }
-
     public List<XTab> getXTabCandidates() {
       return xCandidates;
     }

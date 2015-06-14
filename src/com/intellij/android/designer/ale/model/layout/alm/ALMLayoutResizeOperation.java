@@ -19,6 +19,7 @@ import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.designer.designSurface.OperationContext;
 import com.intellij.designer.model.RadComponent;
 import com.intellij.designer.utils.Position;
+import nz.ac.auckland.ale.IEditOperation;
 import nz.ac.auckland.ale.LayoutEditor;
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.XTab;
@@ -54,8 +55,10 @@ public class ALMLayoutResizeOperation extends ALMLayoutOperation {
       movedYTab = moveArea.getBottom();
     LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
     Point modelMouseLocation = getModelMousePosition();
-    myEditOperation = layoutEditor.detectResizeOperation(moveArea, movedXTab, movedYTab, modelMouseLocation.x, modelMouseLocation.y);
+    IEditOperation editOperation = layoutEditor.detectResizeOperation(moveArea, movedXTab, movedYTab, modelMouseLocation.x,
+                                                                      modelMouseLocation.y);
 
+    myFeedbackPainter.setEditOperation(editOperation);
     myFeedbackPainter.repaint();
   }
 }

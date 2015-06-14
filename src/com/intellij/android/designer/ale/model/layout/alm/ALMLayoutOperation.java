@@ -17,20 +17,19 @@ package com.intellij.android.designer.ale.model.layout.alm;
 
 import com.intellij.android.designer.designSurface.AbstractEditOperation;
 import com.intellij.android.designer.model.RadViewComponent;
+import com.intellij.android.designer.model.layout.relative.MultiLineTooltipManager;
 import com.intellij.designer.designSurface.FeedbackLayer;
 import com.intellij.designer.designSurface.OperationContext;
 import com.intellij.designer.model.RadComponent;
 import com.intellij.openapi.application.ApplicationManager;
-import nz.ac.auckland.ale.IEditOperation;
-import nz.ac.auckland.alm.Area;
 
 import java.awt.*;
 
 
 class ALMLayoutOperation extends AbstractEditOperation {
   protected FeedbackPainter myFeedbackPainter;
+  private MultiLineTooltipManager myTooltip;
   protected LayoutSpecManager myLayoutSpecManager;
-  protected IEditOperation myEditOperation;
 
   public ALMLayoutOperation(RadComponent container, OperationContext context, LayoutSpecManager layoutSpecManager) {
     super(container, context);
@@ -42,10 +41,15 @@ class ALMLayoutOperation extends AbstractEditOperation {
   public void showFeedback() {
     FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
     if (myFeedbackPainter == null) {
-      myFeedbackPainter = new FeedbackPainter(myLayoutSpecManager);
+      myTooltip = new MultiLineTooltipManager(layer, 1);
+      myFeedbackPainter = new FeedbackPainter(myLayoutSpecManager, myTooltip);
       layer.add(myFeedbackPainter);
       myFeedbackPainter.setBounds(0, 0, layer.getWidth(), layer.getHeight());
     }
+
+    // Position the tooltip
+    Point location = myContext.getLocation();
+    myTooltip.update((RadViewComponent) myContainer, location);
   }
 
   @Override
@@ -54,19 +58,20 @@ class ALMLayoutOperation extends AbstractEditOperation {
       FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
       layer.remove(myFeedbackPainter);
       layer.repaint();
+
+      myTooltip.dispose();
+      myTooltip = null;
     }
   }
 
   @Override
   public boolean canExecute() {
-    if (myEditOperation != null)
-      return true;
-    return false;
+    return myLayoutSpecManager.myLayoutEditor.canPerform();
   }
 
   @Override
   public void execute() throws Exception {
-    if (myEditOperation == null && myEditOperation.canPerform()) {
+    if (!myLayoutSpecManager.myLayoutEditor.canPerform()) {
       super.execute();
       return;
     }
@@ -74,7 +79,7 @@ class ALMLayoutOperation extends AbstractEditOperation {
     ApplicationManager.getApplication().runWriteAction(new Runnable() {
       @Override
       public void run() {
-        myEditOperation.perform();
+        myLayoutSpecManager.myLayoutEditor.perform();
         LayoutSpecXmlWriter xmlWriter = new LayoutSpecXmlWriter(myLayoutSpecManager);
         xmlWriter.write();
         myLayoutSpecManager.invalidate();

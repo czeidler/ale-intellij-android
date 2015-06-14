@@ -15,13 +15,18 @@
  */
 package com.intellij.android.designer.ale.model.layout.alm;
 
+import com.intellij.android.designer.designSurface.feedbacks.TextFeedback;
 import com.intellij.android.designer.designSurface.graphics.DesignerGraphics;
-import com.intellij.android.designer.model.RadViewComponent;
+import com.intellij.android.designer.designSurface.graphics.DrawingStyle;
+import com.intellij.android.designer.model.layout.relative.MultiLineTooltipManager;
 import com.intellij.designer.model.RadVisualComponent;
 import nz.ac.auckland.ale.IEditOperation;
 import nz.ac.auckland.ale.IEditOperationFeedback;
 import nz.ac.auckland.ale.ResizeOperation;
 import nz.ac.auckland.ale.SwapOperation;
+import nz.ac.auckland.alm.LayoutSpec;
+import nz.ac.auckland.alm.XTab;
+import nz.ac.auckland.alm.YTab;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -29,12 +34,14 @@ import java.awt.*;
 
 
 class FeedbackPainter extends JComponent {
-  final LayoutSpecManager myLayoutSpecManager;
-  IEditOperation myEditOperation;
-  Rectangle myDragRect = new Rectangle();
+  final private LayoutSpecManager myLayoutSpecManager;
+  private IEditOperation myEditOperation;
+  private Rectangle myDragRect = new Rectangle();
+  private MultiLineTooltipManager myTooltip;
 
-  public FeedbackPainter(LayoutSpecManager layoutSpecManager) {
+  public FeedbackPainter(LayoutSpecManager layoutSpecManager, MultiLineTooltipManager tooltip) {
     myLayoutSpecManager = layoutSpecManager;
+    myTooltip = tooltip;
   }
 
   public void setDragRect(int x, int y, int width, int height) {
@@ -43,6 +50,18 @@ class FeedbackPainter extends JComponent {
 
   public void setEditOperation(IEditOperation editOperation) {
     myEditOperation = editOperation;
+  }
+
+  private void setToolTipText(String text, int line) {
+    if (text == null) {
+      myTooltip.setVisible(line, false);
+      return;
+    }
+
+    myTooltip.setVisible(line, true);
+    TextFeedback feedback = myTooltip.getFeedback(line);
+    feedback.clear();
+    feedback.append(text);
   }
 
   @Override
@@ -66,8 +85,47 @@ class FeedbackPainter extends JComponent {
 
       Rectangle targetRect = target.fromModel(getParent(), target.getBounds());
       graphics.drawRect(targetRect.x, targetRect.y, targetRect.width, targetRect.height);
-    } else if (editOperationFeedback instanceof ResizeOperation.Feedback) {
-      ResizeOperation.Feedback feedback = (ResizeOperation.Feedback)editOperationFeedback;
-    }
+    } else if (editOperationFeedback instanceof ResizeOperation.Feedback)
+      paintResizeFeedback(graphics, (ResizeOperation.Feedback)editOperationFeedback);
+
+  }
+
+  private void paintResizeFeedback(@NotNull DesignerGraphics graphics, @NotNull ResizeOperation.Feedback feedback) {
+    DrawingStyle candidateStyle = new DrawingStyle(Color.blue, new BasicStroke(1));
+    graphics.useStyle(candidateStyle);
+    for (XTab xTab : feedback.getXTabCandidates())
+      paintTab(graphics, xTab);
+    for (YTab yTab : feedback.getYTabCandidates())
+      paintTab(graphics, yTab);
+
+    DrawingStyle resizeStyle = new DrawingStyle(Color.green, new BasicStroke(1));
+    graphics.useStyle(resizeStyle);
+    if (feedback.getTargetXTab() != null)
+      paintTab(graphics, feedback.getTargetXTab());
+    if (feedback.getTargetYTab() != null)
+      paintTab(graphics, feedback.getTargetYTab());
+
+    if (feedback.getDetachX() || feedback.getDetachY())
+      setToolTipText("detach", 0);
+    else
+      setToolTipText(null, 0);
+  }
+
+  private void paintTab(@NotNull DesignerGraphics graphics, @NotNull XTab tab) {
+    LayoutSpec layoutSpec = myLayoutSpecManager.getLayoutSpec();
+    double layoutTop = layoutSpec.getTop().getValue();
+    double layoutBottom = layoutSpec.getBottom().getValue();
+    Point start = myLayoutSpecManager.fromModel(getParent(), new Point((int)tab.getValue(), (int)layoutTop));
+    Point end = myLayoutSpecManager.fromModel(getParent(), new Point((int)tab.getValue(), (int)layoutBottom));
+    graphics.drawLine(start.x, start.y, end.x, end.y);
+  }
+
+  private void paintTab(@NotNull DesignerGraphics graphics, @NotNull YTab tab) {
+    LayoutSpec layoutSpec = myLayoutSpecManager.getLayoutSpec();
+    double layoutLeft = layoutSpec.getLeft().getValue();
+    double layoutRight = layoutSpec.getRight().getValue();
+    Point start = myLayoutSpecManager.fromModel(getParent(), new Point((int)layoutLeft, (int)tab.getValue()));
+    Point end = myLayoutSpecManager.fromModel(getParent(), new Point((int)layoutRight, (int)tab.getValue()));
+    graphics.drawLine(start.x, start.y, end.x, end.y);
   }
 }

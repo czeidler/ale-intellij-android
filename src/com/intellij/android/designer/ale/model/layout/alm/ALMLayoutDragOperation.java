@@ -19,6 +19,7 @@ import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.designer.designSurface.FeedbackLayer;
 import com.intellij.designer.designSurface.OperationContext;
 import com.intellij.designer.model.RadComponent;
+import nz.ac.auckland.ale.IEditOperation;
 import nz.ac.auckland.ale.LayoutEditor;
 import nz.ac.auckland.alm.Area;
 
@@ -44,8 +45,8 @@ public class ALMLayoutDragOperation extends ALMLayoutOperation {
     Point modelMouseLocation = getModelMousePosition();
 
     LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
-    myEditOperation = layoutEditor.detectDragOperation(moveArea, dragRect, modelMouseLocation.x, modelMouseLocation.y);
-    myFeedbackPainter.setEditOperation(myEditOperation);
+    IEditOperation editOperation = layoutEditor.detectDragOperation(moveArea, dragRect, modelMouseLocation.x, modelMouseLocation.y);
+    myFeedbackPainter.setEditOperation(editOperation);
 
     final Rectangle dragRectView = selection.fromModel(layer, selectionRect);
     Point moveDelta = myContext.getMoveDelta();
