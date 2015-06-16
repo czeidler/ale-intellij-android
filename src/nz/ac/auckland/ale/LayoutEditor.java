@@ -82,6 +82,8 @@ public class LayoutEditor {
   }
 
   public void perform() {
+    if (addedArea != null)
+      layoutSpec.addArea(addedArea);
     currentEditOperation.perform();
     layoutStructure = null;
   }
@@ -103,7 +105,15 @@ public class LayoutEditor {
 
     Area sourceArea = movedArea;
     if (movedArea == null) {
-      addedArea = layoutSpec.addArea(layoutSpec.getLeft(), layoutSpec.getTop(), new XTab(), new YTab());
+      XTab left = new XTab();
+      left.setValue(-10);
+      YTab top = new YTab();
+      top.setValue(-10);
+      XTab right = new XTab();
+      right.setValue(-5);
+      YTab bottom = new YTab();
+      bottom.setValue(-5);
+      addedArea = new Area(left, top, right, bottom);
       sourceArea = addedArea;
     }
 

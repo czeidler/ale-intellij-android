@@ -82,9 +82,7 @@ class FeedbackPainter extends JComponent {
 
     if (editOperationFeedback instanceof SwapOperation.Feedback) {
       SwapOperation.Feedback swapFeedback = (SwapOperation.Feedback)editOperationFeedback;
-      RadVisualComponent target = myLayoutSpecManager.getComponentFor(swapFeedback.getTargetArea());
-
-      Rectangle targetRect = target.fromModel(getParent(), target.getBounds());
+      Rectangle targetRect = myLayoutSpecManager.fromModel(getParent(), swapFeedback.getTargetArea().getRect());
       graphics.drawRect(targetRect.x, targetRect.y, targetRect.width, targetRect.height);
     } else if (editOperationFeedback instanceof ResizeOperation.Feedback)
       paintResizeFeedback(graphics, (ResizeOperation.Feedback)editOperationFeedback);
@@ -134,7 +132,7 @@ class FeedbackPainter extends JComponent {
 
   private void paintAreaCandidate(@NotNull DesignerGraphics graphics, @NotNull AreaCandidate area) {
     Rectangle areaView = myLayoutSpecManager.fromModel(getParent(), new Area.Rect((int)area.left.getValue(), (int)area.top.getValue(),
-                                                       (int)area.getWidth(), (int)area.getHeight()));
+                                                       (int)area.right.getValue(), (int)area.bottom.getValue()));
     graphics.drawRect(areaView.x, areaView.y, areaView.width, areaView.height);
   }
 
