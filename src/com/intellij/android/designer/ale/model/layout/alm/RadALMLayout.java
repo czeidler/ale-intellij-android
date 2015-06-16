@@ -51,10 +51,12 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
 
   @Override
   public EditOperation processChildOperation(OperationContext context) {
-    if (context.isMove()) {
-      if (context.isTree()) {
+    if (context.isAdd()) {
+      System.out.println("add");
+    }
+    if (context.isMove() || context.isCreate()) {
+      if (context.isTree())
         return null;
-      }
       return new ALMLayoutDragOperation(myContainer, context, getLayoutSpecManager());
     }
     if (context.is(ALMLayoutResizeOperation.TYPE))

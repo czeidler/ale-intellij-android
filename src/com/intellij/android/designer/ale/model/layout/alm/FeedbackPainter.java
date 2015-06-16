@@ -20,10 +20,8 @@ import com.intellij.android.designer.designSurface.graphics.DesignerGraphics;
 import com.intellij.android.designer.designSurface.graphics.DrawingStyle;
 import com.intellij.android.designer.model.layout.relative.MultiLineTooltipManager;
 import com.intellij.designer.model.RadVisualComponent;
-import nz.ac.auckland.ale.IEditOperation;
-import nz.ac.auckland.ale.IEditOperationFeedback;
-import nz.ac.auckland.ale.ResizeOperation;
-import nz.ac.auckland.ale.SwapOperation;
+import nz.ac.auckland.ale.*;
+import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
@@ -38,6 +36,9 @@ class FeedbackPainter extends JComponent {
   private IEditOperation myEditOperation;
   private Rectangle myDragRect = new Rectangle();
   private MultiLineTooltipManager myTooltip;
+
+  final private Color TARGET_COLOR = Color.green;
+  final private Color CANDIDATE_COLOR = Color.blue;
 
   public FeedbackPainter(LayoutSpecManager layoutSpecManager, MultiLineTooltipManager tooltip) {
     myLayoutSpecManager = layoutSpecManager;
@@ -87,18 +88,38 @@ class FeedbackPainter extends JComponent {
       graphics.drawRect(targetRect.x, targetRect.y, targetRect.width, targetRect.height);
     } else if (editOperationFeedback instanceof ResizeOperation.Feedback)
       paintResizeFeedback(graphics, (ResizeOperation.Feedback)editOperationFeedback);
+    else if (editOperationFeedback instanceof MoveOperation.Feedback)
+      paintMoveFeedback(graphics, (MoveOperation.Feedback)editOperationFeedback);
+  }
 
+  private void paintMoveFeedback(@NotNull DesignerGraphics graphics, @NotNull MoveOperation.Feedback feedback) {
+    AreaCandidate maxArea = feedback.getMaxArea();
+    if (maxArea == null)
+      return;
+
+    DrawingStyle candidateStyle = new DrawingStyle(Color.gray, new BasicStroke(1));
+    graphics.useStyle(candidateStyle);
+    paintAreaCandidate(graphics, maxArea);
+    for (XTab tab : feedback.getMaxAreaXTabs())
+      paintTab(graphics, tab, maxArea.top.getValue(), maxArea.bottom.getValue());
+    for (YTab tab : feedback.getMaxAreaYTabs())
+      paintTab(graphics, tab, maxArea.left.getValue(), maxArea.right.getValue());
+
+    DrawingStyle targetStyle = new DrawingStyle(TARGET_COLOR, new BasicStroke(1));
+    graphics.useStyle(targetStyle);
+    AreaCandidate targetArea = feedback.getTargetArea();
+    paintAreaCandidate(graphics, targetArea);
   }
 
   private void paintResizeFeedback(@NotNull DesignerGraphics graphics, @NotNull ResizeOperation.Feedback feedback) {
-    DrawingStyle candidateStyle = new DrawingStyle(Color.blue, new BasicStroke(1));
+    DrawingStyle candidateStyle = new DrawingStyle(CANDIDATE_COLOR, new BasicStroke(1));
     graphics.useStyle(candidateStyle);
     for (XTab xTab : feedback.getXTabCandidates())
       paintTab(graphics, xTab);
     for (YTab yTab : feedback.getYTabCandidates())
       paintTab(graphics, yTab);
 
-    DrawingStyle resizeStyle = new DrawingStyle(Color.green, new BasicStroke(1));
+    DrawingStyle resizeStyle = new DrawingStyle(TARGET_COLOR, new BasicStroke(1));
     graphics.useStyle(resizeStyle);
     if (feedback.getTargetXTab() != null)
       paintTab(graphics, feedback.getTargetXTab());
@@ -111,12 +132,28 @@ class FeedbackPainter extends JComponent {
       setToolTipText(null, 0);
   }
 
+  private void paintAreaCandidate(@NotNull DesignerGraphics graphics, @NotNull AreaCandidate area) {
+    Rectangle areaView = myLayoutSpecManager.fromModel(getParent(), new Area.Rect((int)area.left.getValue(), (int)area.top.getValue(),
+                                                       (int)area.getWidth(), (int)area.getHeight()));
+    graphics.drawRect(areaView.x, areaView.y, areaView.width, areaView.height);
+  }
+
+  private void paintTab(@NotNull DesignerGraphics graphics, @NotNull XTab tab, double top, double bottom) {
+    Point start = myLayoutSpecManager.fromModel(getParent(), new Point((int)tab.getValue(), (int)top));
+    Point end = myLayoutSpecManager.fromModel(getParent(), new Point((int)tab.getValue(), (int)bottom));
+    graphics.drawLine(start.x, start.y, end.x, end.y);
+  }
+
   private void paintTab(@NotNull DesignerGraphics graphics, @NotNull XTab tab) {
     LayoutSpec layoutSpec = myLayoutSpecManager.getLayoutSpec();
     double layoutTop = layoutSpec.getTop().getValue();
     double layoutBottom = layoutSpec.getBottom().getValue();
-    Point start = myLayoutSpecManager.fromModel(getParent(), new Point((int)tab.getValue(), (int)layoutTop));
-    Point end = myLayoutSpecManager.fromModel(getParent(), new Point((int)tab.getValue(), (int)layoutBottom));
+    paintTab(graphics, tab, layoutTop, layoutBottom);
+  }
+
+  private void paintTab(@NotNull DesignerGraphics graphics, @NotNull YTab tab, double left, double right) {
+    Point start = myLayoutSpecManager.fromModel(getParent(), new Point((int)left, (int)tab.getValue()));
+    Point end = myLayoutSpecManager.fromModel(getParent(), new Point((int)right, (int)tab.getValue()));
     graphics.drawLine(start.x, start.y, end.x, end.y);
   }
 
@@ -124,8 +161,6 @@ class FeedbackPainter extends JComponent {
     LayoutSpec layoutSpec = myLayoutSpecManager.getLayoutSpec();
     double layoutLeft = layoutSpec.getLeft().getValue();
     double layoutRight = layoutSpec.getRight().getValue();
-    Point start = myLayoutSpecManager.fromModel(getParent(), new Point((int)layoutLeft, (int)tab.getValue()));
-    Point end = myLayoutSpecManager.fromModel(getParent(), new Point((int)layoutRight, (int)tab.getValue()));
-    graphics.drawLine(start.x, start.y, end.x, end.y);
+    paintTab(graphics, tab, layoutLeft, layoutRight);
   }
 }

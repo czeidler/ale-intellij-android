@@ -81,6 +81,12 @@ class LayoutSpecManager {
     myLayoutEditor.setModelViewScale(view / model);
     myLayoutEditor.setTabWidthView(8);
     myLayoutEditor.setDetachThresholdView(80);
+    myLayoutEditor.setSnapView(20);
+  }
+
+  public void addComponent(Area addedArea, RadComponent insertComponent) {
+    myRadViewToAreaMap.put(insertComponent, addedArea);
+    myAreaToRadViewMap.put(addedArea, insertComponent);
   }
 
   public boolean isValid() {

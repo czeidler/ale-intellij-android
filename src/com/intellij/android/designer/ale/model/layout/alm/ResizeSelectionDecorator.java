@@ -15,6 +15,7 @@
  */
 package com.intellij.android.designer.ale.model.layout.alm;
 
+import com.android.ide.common.rendering.api.ViewInfo;
 import com.intellij.android.designer.designSurface.graphics.DesignerGraphics;
 import com.intellij.android.designer.designSurface.graphics.DirectionResizePoint;
 import com.intellij.android.designer.designSurface.graphics.DrawingStyle;
@@ -55,7 +56,10 @@ public class ResizeSelectionDecorator extends com.intellij.designer.designSurfac
     IALMLayoutSpecs almLayoutSpecs = (IALMLayoutSpecs)container.getViewInfo().getViewObject();
 
     if (component instanceof RadViewComponent) {
-      Object viewObject = ((RadViewComponent)component).getViewInfo().getViewObject();
+      ViewInfo viewInfo = ((RadViewComponent)component).getViewInfo();
+      if (viewInfo == null)
+        return;
+      Object viewObject = viewInfo.getViewObject();
       Area area = almLayoutSpecs.getArea(viewObject);
       Area.Rect rect = area.getRect();
 

@@ -71,9 +71,14 @@ class ALMLayoutOperation extends AbstractEditOperation {
 
   @Override
   public void execute() throws Exception {
-    if (!myLayoutSpecManager.myLayoutEditor.canPerform()) {
-      super.execute();
+    if (!myLayoutSpecManager.myLayoutEditor.canPerform())
       return;
+
+    // super.execute creates, pastes or adds the item
+    if (myContext.isCreate() || myContext.isPaste() || myContext.isAdd()) {
+      super.execute();
+      RadComponent insertComponent = myContainer.getChildren().get(myContainer.getChildren().size() - 1);
+      myLayoutSpecManager.addComponent(myLayoutSpecManager.myLayoutEditor.getAddedArea(), insertComponent);
     }
 
     ApplicationManager.getApplication().runWriteAction(new Runnable() {
@@ -89,7 +94,6 @@ class ALMLayoutOperation extends AbstractEditOperation {
 
   protected Point getModelMousePosition() {
     FeedbackLayer layer = myContext.getArea().getFeedbackLayer();
-    RadViewComponent selection = RadViewComponent.getViewComponents(myComponents).get(0);
-    return LayoutSpecManager.toModel(layer, myLayoutSpecManager.getALMLayoutSpecs(), selection.getParent(), myContext.getLocation());
+    return LayoutSpecManager.toModel(layer, myLayoutSpecManager.getALMLayoutSpecs(), myContainer, myContext.getLocation());
   }
 }

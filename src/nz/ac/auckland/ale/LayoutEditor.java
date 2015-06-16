@@ -21,24 +21,30 @@ import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
 import nz.ac.auckland.linsolve.Variable;
 
-import java.util.HashMap;
-import java.util.Map;
-
 
 public class LayoutEditor {
   final LayoutSpec layoutSpec;
-  final Map<XTab, Edge> xTabEdgeMap = new HashMap<XTab, Edge>();
-  final Map<YTab, Edge> yTabEdgeMap = new HashMap<YTab, Edge>();
-  boolean edgesValid = false;
+  private Area removedArea;
+  private Area addedArea;
+  private LayoutStructure layoutStructure;
   IEditOperation currentEditOperation;
   // view / model coordinates
   float modelViewScale = 1;
   // tab width in view coordinates
   float tabWidthView = 8;
   float detachThresholdView = 80;
+  float snapView = 20;
 
   public LayoutEditor(LayoutSpec layoutSpec) {
     this.layoutSpec = layoutSpec;
+  }
+
+  public void setRemovedArea(Area removedArea) {
+    this.removedArea = removedArea;
+  }
+
+  public Area getAddedArea() {
+    return addedArea;
   }
 
   public void setModelViewScale(float modelViewScale) {
@@ -61,6 +67,14 @@ public class LayoutEditor {
     return detachThresholdView * getModelViewScale();
   }
 
+  public void setSnapView(float snapView) {
+    this.snapView = snapView;
+  }
+
+  public float getSnapModel() {
+    return snapView * getModelViewScale();
+  }
+
   public boolean canPerform() {
     if (currentEditOperation != null && currentEditOperation.canPerform())
       return true;
@@ -69,7 +83,7 @@ public class LayoutEditor {
 
   public void perform() {
     currentEditOperation.perform();
-    edgesValid = false;
+    layoutStructure = null;
   }
 
   /**
@@ -82,17 +96,31 @@ public class LayoutEditor {
    * @return null if no suitable operation has been found
    */
   public IEditOperation detectDragOperation(Area movedArea, Area.Rect dragRect, float dragX, float dragY) {
+    // swap
     Area areaUnder = findContentAreaAt(dragX, dragY, movedArea);
-    if (areaUnder == null) {
-      currentEditOperation = null;
-      return null;
-    }
-    if (movedArea != null) {
+    if (movedArea != null && areaUnder != null) {
       currentEditOperation = SwapOperation.swap(this, movedArea, areaUnder);
       return currentEditOperation;
     }
 
-    return null;
+    Area sourceArea = movedArea;
+    if (movedArea == null) {
+      addedArea = layoutSpec.addArea(layoutSpec.getLeft(), layoutSpec.getTop(), new XTab(), new YTab());
+      sourceArea = addedArea;
+    }
+    currentEditOperation = new MoveOperation(this, sourceArea, dragRect, dragX, dragY);
+
+    return finalizedEditOperation();
+  }
+
+  private IEditOperation finalizedEditOperation() {
+    if (currentEditOperation == null)
+      return null;
+    if (!currentEditOperation.canPerform() && addedArea != null) {
+      addedArea.remove();
+      addedArea = null;
+    }
+    return currentEditOperation;
   }
 
   public IEditOperation detectResizeOperation(Area moveArea, XTab movedXTab, YTab movedYTab, float dragX, float dragY) {
@@ -105,26 +133,10 @@ public class LayoutEditor {
     return diff * getModelViewScale() < tabWidthView;
   }
 
-  public Map<XTab, Edge> getXTabEdges() {
-    if (!edgesValid) {
-      fillEdges();
-      edgesValid = true;
-    }
-    return xTabEdgeMap;
-  }
-
-  public Map<YTab, Edge> getYTabEdges() {
-    if (!edgesValid) {
-      fillEdges();
-      edgesValid = true;
-    }
-    return yTabEdgeMap;
-  }
-
-  private void fillEdges() {
-    xTabEdgeMap.clear();
-    yTabEdgeMap.clear();
-    Edge.fillEdges(layoutSpec, xTabEdgeMap, yTabEdgeMap);
+  public LayoutStructure getLayoutStructure() {
+    if (layoutStructure == null)
+      layoutStructure = new LayoutStructure(layoutSpec, removedArea);
+    return layoutStructure;
   }
 
   public LayoutSpec getLayoutSpec() {

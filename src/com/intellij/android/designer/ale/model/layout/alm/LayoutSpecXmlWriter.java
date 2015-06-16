@@ -358,8 +358,8 @@ class LayoutSpecXmlWriter {
 
   public void write() {
     LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
-    Map<XTab, Edge> xTabEdgeMap = layoutEditor.getXTabEdges();
-    Map<YTab, Edge> yTabEdgeMap = layoutEditor.getYTabEdges();
+    Map<XTab, Edge> xTabEdgeMap = layoutEditor.getLayoutStructure().getXTabEdges();
+    Map<YTab, Edge> yTabEdgeMap = layoutEditor.getLayoutStructure().getYTabEdges();
     final List<String> freeXTabNames = new ArrayList<String>();
     final List<String> freeYTabNames = new ArrayList<String>();
 
