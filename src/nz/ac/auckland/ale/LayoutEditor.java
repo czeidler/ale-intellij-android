@@ -97,25 +97,20 @@ public class LayoutEditor {
    */
   public IEditOperation detectDragOperation(Area movedArea, Area.Rect dragRect, float dragX, float dragY) {
     // swap
-    Area areaUnder = findContentAreaAt(dragX, dragY, movedArea);
-    if (movedArea != null && areaUnder != null) {
-      currentEditOperation = SwapOperation.swap(this, movedArea, areaUnder);
+    currentEditOperation = new SwapOperation(this, movedArea, dragX, dragY);
+    if (currentEditOperation.canPerform())
       return currentEditOperation;
-    }
 
     Area sourceArea = movedArea;
     if (movedArea == null) {
       addedArea = layoutSpec.addArea(layoutSpec.getLeft(), layoutSpec.getTop(), new XTab(), new YTab());
       sourceArea = addedArea;
     }
-    currentEditOperation = new MoveOperation(this, sourceArea, dragRect, dragX, dragY);
 
-    return finalizedEditOperation();
-  }
+    currentEditOperation = new MoveBetweenOperation(this, sourceArea, dragX, dragY);
+    if (!currentEditOperation.canPerform())
+      currentEditOperation = new MoveOperation(this, sourceArea, dragRect, dragX, dragY);
 
-  private IEditOperation finalizedEditOperation() {
-    if (currentEditOperation == null)
-      return null;
     if (!currentEditOperation.canPerform() && addedArea != null) {
       addedArea.remove();
       addedArea = null;
@@ -143,7 +138,7 @@ public class LayoutEditor {
     return layoutSpec;
   }
 
-  private Area findContentAreaAt(float x, float y, Area veto) {
+  public Area findContentAreaAt(float x, float y, Area veto) {
     for (Area area : layoutSpec.getAreas()) {
       if (area == veto)
         continue;

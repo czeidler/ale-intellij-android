@@ -17,45 +17,27 @@ package nz.ac.auckland.ale;
 
 
 import nz.ac.auckland.alm.Area;
-import nz.ac.auckland.alm.XTab;
-import nz.ac.auckland.alm.YTab;
 
-public class SwapOperation extends AbstractEditOperation {
-  Area draggedArea;
-  Area targetArea;
+public class MoveBetweenOperation extends AbstractEditOperation {
+  final private Area movedArea;
 
-  public SwapOperation(LayoutEditor layoutEditor, Area draggedArea, float dragX, float dragY) {
+  public MoveBetweenOperation(LayoutEditor layoutEditor, Area movedArea, float dragX, float dragY) {
     super(layoutEditor);
-
-    this.draggedArea = draggedArea;
-
-    targetArea = layoutEditor.findContentAreaAt(dragX, dragY, draggedArea);
-    if (draggedArea == targetArea) {
-      targetArea = null;
-      return;
-    }
+    this.movedArea = movedArea;
   }
 
   @Override
   public boolean canPerform() {
-    return targetArea != null;
+    return false;
   }
 
   @Override
   public void perform() {
-    XTab left = draggedArea.getLeft();
-    YTab top = draggedArea.getTop();
-    XTab right = draggedArea.getRight();
-    YTab bottom = draggedArea.getBottom();
 
-    draggedArea.setTo(targetArea.getLeft(), targetArea.getTop(), targetArea.getRight(), targetArea.getBottom());
-    targetArea.setTo(left, top, right, bottom);
   }
 
   public class Feedback implements IEditOperationFeedback {
-    public Area getTargetArea() {
-      return targetArea;
-    }
+
   }
 
   @Override
