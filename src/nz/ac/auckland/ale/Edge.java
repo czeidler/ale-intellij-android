@@ -50,7 +50,13 @@ public class Edge {
   }
 
   static public void fillEdges(LayoutSpec layoutSpec, Map<XTab, Edge> xMap, Map<YTab, Edge> yMap) {
+    fillEdges(layoutSpec, xMap, yMap, null);
+  }
+
+  static public void fillEdges(LayoutSpec layoutSpec, Map<XTab, Edge> xMap, Map<YTab, Edge> yMap, Area removedArea) {
     for (Area area : layoutSpec.getAreas()) {
+      if (area == removedArea)
+        continue;
       Edge leftEdge = getEdge(area.getLeft(), xMap);
       leftEdge.areas2.add(area);
       Edge topEdge = getEdge(area.getTop(), yMap);
