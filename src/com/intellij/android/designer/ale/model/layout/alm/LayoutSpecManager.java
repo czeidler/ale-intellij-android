@@ -133,6 +133,10 @@ class LayoutSpecManager {
     return fromModel(layer, myALMLayoutSpecs, myLayout, point);
   }
 
+  public Rectangle toModel(Component layer, Rectangle rect) {
+    return toModel(layer, myALMLayoutSpecs, myLayout, rect);
+  }
+
   public Point toModel(Component layer, Point point) {
     return toModel(layer, myALMLayoutSpecs, myLayout, point);
   }
@@ -163,6 +167,19 @@ class LayoutSpecManager {
     double offsetY = layoutBounds.getY() - aleLayoutBounds.getY();
     pointView.translate((int)offsetX, (int)offsetY);
     return pointView;
+  }
+
+  static public Rectangle toModel(Component layer, IALMLayoutSpecs almLayoutSpecs, RadComponent layout, Rectangle rect) {
+    Rectangle aleLayoutBounds = new Rectangle((int)almLayoutSpecs.getLeftTab().getValue(), (int)almLayoutSpecs.getTopTab().getValue(),
+                                              (int)(almLayoutSpecs.getRightTab().getValue() - almLayoutSpecs.getLeftTab().getValue()),
+                                              (int)(almLayoutSpecs.getBottomTab().getValue() - almLayoutSpecs.getTopTab().getValue()));
+    Rectangle modelRect = layout.toModel(layer, rect);
+    final Rectangle layoutBounds = layout.getBounds();
+
+    double offsetX = aleLayoutBounds.getX() - layoutBounds.getX();
+    double offsetY = aleLayoutBounds.getY() - layoutBounds.getY();
+    modelRect.translate((int)offsetX, (int)offsetY);
+    return modelRect;
   }
 
   static public Point toModel(Component layer, IALMLayoutSpecs almLayoutSpecs, RadComponent layout, Point point) {
