@@ -16,59 +16,34 @@
 package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.Area;
-import nz.ac.auckland.alm.LayoutSpec;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
 import nz.ac.auckland.linsolve.Variable;
 
-import java.util.List;
-import java.util.Map;
 
-
-public class TopDirection extends AbstractVerticalDirection {
+abstract public class AbstractHorizontalDirection implements IDirection {
   @Override
-  public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
-    return map.get(area.getTop());
-  }
-
-  @Override
-  public Variable getTab(Area area) {
+  public Variable getOrthogonalTab1(Area area) {
     return area.getTop();
   }
 
   @Override
-  public Variable getOppositeTab(Area area) {
+  public Variable getOrthogonalTab2(Area area) {
     return area.getBottom();
   }
 
   @Override
-  public Variable getTab(LayoutSpec layoutSpec) {
-    return layoutSpec.getTop();
-  }
-
-  @Override
-  public List<Area> getAreas(Edge edge) {
-    return edge.areas1;
-  }
-
-  @Override
-  public List<Area> getOppositeAreas(Edge edge) {
-    return edge.areas2;
-  }
-
-  @Override
-  public void setTab(Area area, Variable tab) {
+  public void setOrthogonalTab1(Area area, Variable tab) {
     area.setTopBottom((YTab)tab, area.getBottom());
   }
 
   @Override
-  public void setOppositeTab(Area area, Variable tab) {
+  public void setOrthogonalTab2(Area area, Variable tab) {
     area.setTopBottom(area.getTop(), (YTab)tab);
   }
 
   @Override
-  public void setTabs(Area area, Variable tab, Variable orthTab1, Variable oppositeTab, Variable orthTab2) {
-    area.setLeftRight((XTab)orthTab1, (XTab)orthTab2);
-    area.setTopBottom((YTab)tab, (YTab)oppositeTab);
+  public Variable createTab() {
+    return new XTab();
   }
 }

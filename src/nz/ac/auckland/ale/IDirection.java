@@ -27,9 +27,17 @@ public interface IDirection {
   <Tab> Edge getEdge(Area area, Map<Tab, Edge> map);
   Variable getTab(Area area);
   Variable getOppositeTab(Area area);
+  Variable getOrthogonalTab1(Area area);
+  Variable getOrthogonalTab2(Area area);
   Variable getTab(LayoutSpec layoutSpec);
   List<Area> getAreas(Edge edge);
   List<Area> getOppositeAreas(Edge edge);
 
+  Variable createTab();
+
   void setTab(Area area, Variable tab);
+  void setOppositeTab(Area area, Variable tab);
+  void setOrthogonalTab1(Area area, Variable tab);
+  void setOrthogonalTab2(Area area, Variable tab);
+  void setTabs(Area area, Variable tab, Variable orthTab1, Variable oppositeTab, Variable orthTab2);
 }

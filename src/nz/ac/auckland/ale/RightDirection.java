@@ -18,13 +18,14 @@ package nz.ac.auckland.ale;
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
 import nz.ac.auckland.alm.XTab;
+import nz.ac.auckland.alm.YTab;
 import nz.ac.auckland.linsolve.Variable;
 
 import java.util.List;
 import java.util.Map;
 
 
-public class RightDirection implements IDirection {
+public class RightDirection extends AbstractHorizontalDirection {
   @Override
   public <Tab> Edge getEdge(Area area, Map<Tab, Edge> map) {
     return map.get(area.getRight());
@@ -57,7 +58,17 @@ public class RightDirection implements IDirection {
 
   @Override
   public void setTab(Area area, Variable tab) {
-    area.setTo(area.getLeft(), area.getTop(), (XTab)tab, area.getBottom());
+    area.setLeftRight(area.getLeft(), (XTab)tab);
   }
 
+  @Override
+  public void setOppositeTab(Area area, Variable tab) {
+    area.setLeftRight((XTab)tab, area.getRight());
+  }
+
+  @Override
+  public void setTabs(Area area, Variable tab, Variable orthTab1, Variable oppositeTab, Variable orthTab2) {
+    area.setLeftRight((XTab)oppositeTab, (XTab)tab);
+    area.setTopBottom((YTab)orthTab1, (YTab)orthTab2);
+  }
 }
