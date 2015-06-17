@@ -101,4 +101,20 @@ public class LayoutStructure {
     }
     return null;
   }
+
+  public Area findContentAreaAt(float x, float y) {
+    for (Area area : getAreas()) {
+      if (area.getContentRect().contains(x, y))
+        return area;
+    }
+    return null;
+  }
+
+  public Area findAreaAt(float x, float y) {
+    for (Area area : getAreas()) {
+      if (area.getRect().contains(x, y))
+        return area;
+    }
+    return null;
+  }
 }

@@ -25,7 +25,7 @@ import nz.ac.auckland.linsolve.Variable;
 public class LayoutEditor {
   final LayoutSpec layoutSpec;
   private Area removedArea;
-  private Area addedArea;
+  private Area createdArea;
   private LayoutStructure layoutStructure;
   IEditOperation currentEditOperation;
   // view / model coordinates
@@ -43,8 +43,8 @@ public class LayoutEditor {
     this.removedArea = removedArea;
   }
 
-  public Area getAddedArea() {
-    return addedArea;
+  public Area getCreatedArea() {
+    return createdArea;
   }
 
   public void setModelViewScale(float modelViewScale) {
@@ -82,10 +82,26 @@ public class LayoutEditor {
   }
 
   public void perform() {
-    if (addedArea != null)
-      layoutSpec.addArea(addedArea);
+    if (createdArea != null)
+      layoutSpec.addArea(createdArea);
     currentEditOperation.perform();
     layoutStructure = null;
+  }
+
+  private Area ensureSourceArea(Area area) {
+    if (area != null)
+      return area;
+
+    XTab left = new XTab();
+    left.setValue(-10);
+    YTab top = new YTab();
+    top.setValue(-10);
+    XTab right = new XTab();
+    right.setValue(-5);
+    YTab bottom = new YTab();
+    bottom.setValue(-5);
+    createdArea = new Area(left, top, right, bottom);
+    return createdArea;
   }
 
   /**
@@ -98,33 +114,24 @@ public class LayoutEditor {
    * @return null if no suitable operation has been found
    */
   public IEditOperation detectDragOperation(Area movedArea, Area.Rect dragRect, float dragX, float dragY) {
-    // swap
-    currentEditOperation = new SwapOperation(this, movedArea, dragX, dragY);
-    if (currentEditOperation.canPerform())
-      return currentEditOperation;
+    Area sourceArea = ensureSourceArea(movedArea);
 
-    Area sourceArea = movedArea;
-    if (movedArea == null) {
-      XTab left = new XTab();
-      left.setValue(-10);
-      YTab top = new YTab();
-      top.setValue(-10);
-      XTab right = new XTab();
-      right.setValue(-5);
-      YTab bottom = new YTab();
-      bottom.setValue(-5);
-      addedArea = new Area(left, top, right, bottom);
-      sourceArea = addedArea;
+    Area mouseOver = findAreaAt(dragX, dragY);
+    if (mouseOver != null) {
+      // insert between
+      currentEditOperation = new MoveBetweenOperation(this, sourceArea, mouseOver, dragX, dragY);
+      if (currentEditOperation.canPerform())
+        return currentEditOperation;
+      // swap
+      mouseOver = findContentAreaAt(dragX, dragY);
+      if (mouseOver != null) {
+        currentEditOperation = new SwapOperation(this, sourceArea, mouseOver);
+        if (currentEditOperation.canPerform()) return currentEditOperation;
+      }
     }
 
-    currentEditOperation = new MoveBetweenOperation(this, sourceArea, dragX, dragY);
-    if (!currentEditOperation.canPerform())
-      currentEditOperation = new MoveOperation(this, sourceArea, dragRect, dragX, dragY);
+    currentEditOperation = new MoveOperation(this, sourceArea, dragRect, dragX, dragY);
 
-    if (!currentEditOperation.canPerform() && addedArea != null) {
-      addedArea.remove();
-      addedArea = null;
-    }
     return currentEditOperation;
   }
 
@@ -148,13 +155,11 @@ public class LayoutEditor {
     return layoutSpec;
   }
 
-  public Area findContentAreaAt(float x, float y, Area veto) {
-    for (Area area : layoutSpec.getAreas()) {
-      if (area == veto)
-        continue;
-      if (area.getContentRect().contains(x, y))
-        return area;
-    }
-    return null;
+  public Area findContentAreaAt(float x, float y) {
+    return getLayoutStructure().findContentAreaAt(x, y);
+  }
+
+  public Area findAreaAt(float x, float y) {
+    return getLayoutStructure().findAreaAt(x, y);
   }
 }

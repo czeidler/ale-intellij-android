@@ -25,6 +25,7 @@ import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.linsolve.Variable;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -80,14 +81,33 @@ class FeedbackPainter extends JComponent {
       return;
     IEditOperationFeedback editOperationFeedback = myEditOperation.getFeedback();
 
-    if (editOperationFeedback instanceof SwapOperation.Feedback) {
-      SwapOperation.Feedback swapFeedback = (SwapOperation.Feedback)editOperationFeedback;
-      Rectangle targetRect = myLayoutSpecManager.fromModel(getParent(), swapFeedback.getTargetArea().getRect());
-      graphics.drawRect(targetRect.x, targetRect.y, targetRect.width, targetRect.height);
-    } else if (editOperationFeedback instanceof ResizeOperation.Feedback)
+    if (editOperationFeedback instanceof SwapOperation.Feedback)
+      paintSwapFeedback(graphics, (SwapOperation.Feedback)editOperationFeedback);
+    else if (editOperationFeedback instanceof ResizeOperation.Feedback)
       paintResizeFeedback(graphics, (ResizeOperation.Feedback)editOperationFeedback);
     else if (editOperationFeedback instanceof MoveOperation.Feedback)
       paintMoveFeedback(graphics, (MoveOperation.Feedback)editOperationFeedback);
+    else if (editOperationFeedback instanceof MoveBetweenOperation.Feedback)
+      paintMoveBetweenFeedback(graphics, (MoveBetweenOperation.Feedback)editOperationFeedback);
+  }
+
+  private void paintSwapFeedback(DesignerGraphics graphics, SwapOperation.Feedback feedback) {
+    DrawingStyle resizeStyle = new DrawingStyle(TARGET_COLOR, new BasicStroke(1));
+    graphics.useStyle(resizeStyle);
+    paintArea(graphics, feedback.getTargetArea());
+  }
+
+  private void paintMoveBetweenFeedback(DesignerGraphics graphics, MoveBetweenOperation.Feedback feedback) {
+    DrawingStyle resizeStyle = new DrawingStyle(TARGET_COLOR, new BasicStroke(1));
+    graphics.useStyle(resizeStyle);
+
+    Area targetArea = feedback.getTargetArea();
+    paintArea(graphics, targetArea);
+    Variable tab = feedback.getInsertDirection().getTab(feedback.getTargetArea());
+    if (tab instanceof XTab)
+      paintTab(graphics, (XTab)tab);
+    else
+      paintTab(graphics, (YTab)tab);
   }
 
   private void paintMoveFeedback(@NotNull DesignerGraphics graphics, @NotNull MoveOperation.Feedback feedback) {
@@ -128,6 +148,11 @@ class FeedbackPainter extends JComponent {
       setToolTipText("detach", 0);
     else
       setToolTipText(null, 0);
+  }
+
+  private void paintArea(@NotNull DesignerGraphics graphics, @NotNull Area area) {
+    Rectangle targetRect = myLayoutSpecManager.fromModel(getParent(), area.getRect());
+    graphics.drawRect(targetRect.x, targetRect.y, targetRect.width, targetRect.height);
   }
 
   private void paintAreaCandidate(@NotNull DesignerGraphics graphics, @NotNull AreaCandidate area) {

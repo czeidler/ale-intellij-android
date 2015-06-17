@@ -21,19 +21,15 @@ import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
 
 public class SwapOperation extends AbstractEditOperation {
-  Area draggedArea;
+  final Area draggedArea;
   Area targetArea;
 
-  public SwapOperation(LayoutEditor layoutEditor, Area draggedArea, float dragX, float dragY) {
+  public SwapOperation(LayoutEditor layoutEditor, Area draggedArea, Area mouseOver) {
     super(layoutEditor);
-
     this.draggedArea = draggedArea;
 
-    targetArea = layoutEditor.findContentAreaAt(dragX, dragY, draggedArea);
-    if (draggedArea == targetArea) {
-      targetArea = null;
-      return;
-    }
+    if (draggedArea != mouseOver)
+      targetArea = mouseOver;
   }
 
   @Override

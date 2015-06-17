@@ -78,7 +78,7 @@ class ALMLayoutOperation extends AbstractEditOperation {
     if (myContext.isCreate() || myContext.isPaste() || myContext.isAdd()) {
       super.execute();
       RadComponent insertComponent = myContainer.getChildren().get(myContainer.getChildren().size() - 1);
-      myLayoutSpecManager.addComponent(myLayoutSpecManager.myLayoutEditor.getAddedArea(), insertComponent);
+      myLayoutSpecManager.addComponent(myLayoutSpecManager.myLayoutEditor.getCreatedArea(), insertComponent);
     }
 
     ApplicationManager.getApplication().runWriteAction(new Runnable() {

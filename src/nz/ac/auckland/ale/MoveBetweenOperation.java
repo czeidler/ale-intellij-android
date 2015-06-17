@@ -15,29 +15,55 @@
  */
 package nz.ac.auckland.ale;
 
-
 import nz.ac.auckland.alm.Area;
+import nz.ac.auckland.linsolve.Variable;
+
 
 public class MoveBetweenOperation extends AbstractEditOperation {
   final private Area movedArea;
+  final private Area targetArea;
+  private IDirection direction;
 
-  public MoveBetweenOperation(LayoutEditor layoutEditor, Area movedArea, float dragX, float dragY) {
+  public MoveBetweenOperation(LayoutEditor layoutEditor, Area movedArea, Area mouseOverArea, float x, float y) {
     super(layoutEditor);
     this.movedArea = movedArea;
+    this.targetArea = mouseOverArea;
+
+    if (layoutEditor.isOverTab(targetArea.getLeft(), x))
+      direction = new LeftDirection();
+    else if (layoutEditor.isOverTab(targetArea.getRight(), x))
+      direction = new RightDirection();
+    else if (layoutEditor.isOverTab(targetArea.getTop(), y))
+      direction = new TopDirection();
+    else if (layoutEditor.isOverTab(targetArea.getBottom(), y))
+      direction = new BottomDirection();
   }
 
   @Override
   public boolean canPerform() {
-    return false;
+    return direction != null;
   }
 
   @Override
   public void perform() {
+    Variable tab = direction.getTab(targetArea);
+    Variable tabOrth1 = direction.getOrthogonalTab1(targetArea);
+    Variable tabOrth2 = direction.getOrthogonalTab2(targetArea);
+    Variable newTab = direction.createTab();
 
+    direction.setTabs(movedArea, tab, tabOrth1, newTab, tabOrth2);
+
+    direction.setTab(targetArea, newTab);
   }
 
   public class Feedback implements IEditOperationFeedback {
+    public Area getTargetArea() {
+      return targetArea;
+    }
 
+    public IDirection getInsertDirection() {
+      return direction;
+    }
   }
 
   @Override
