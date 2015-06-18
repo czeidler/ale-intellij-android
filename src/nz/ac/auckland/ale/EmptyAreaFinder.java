@@ -24,7 +24,6 @@ import java.util.List;
 
 
 public class EmptyAreaFinder {
-  AreaCandidate targetArea = new AreaCandidate();
   AreaCandidate maxArea = new AreaCandidate();
   List<XTab> maxAreaXTabs = new ArrayList<XTab>();
   List<YTab> maxAreaYTabs = new ArrayList<YTab>();
@@ -33,10 +32,6 @@ public class EmptyAreaFinder {
 
   public EmptyAreaFinder(LayoutStructure layoutStructure) {
     this.layoutStructure = layoutStructure;
-  }
-
-  public AreaCandidate getTargetArea() {
-    return targetArea;
   }
 
   public AreaCandidate getMaxArea() {
@@ -51,7 +46,7 @@ public class EmptyAreaFinder {
     return maxAreaYTabs;
   }
 
-  public boolean find(Area.Rect rect, float x, float y, float snapDistance) {
+  public boolean find(float x, float y) {
     // Find max area: first find the min area then maximize it
     maxArea.left = layoutStructure.findTabLeftOf(x);
     maxArea.top = layoutStructure.findTabAbove(y);
@@ -62,38 +57,6 @@ public class EmptyAreaFinder {
     if (!isEmpty(maxArea))
       return false;
     maxArea = maximizeArea(maxArea, maxAreaXTabs, maxAreaYTabs);
-
-    // place rect in it
-    if (Math.abs(maxArea.left.getValue() - rect.left) < snapDistance)
-      targetArea.left = maxArea.left;
-    if (Math.abs(maxArea.top.getValue() - rect.top) < snapDistance)
-      targetArea.top = maxArea.top;
-    if (Math.abs(maxArea.right.getValue() - rect.right) < snapDistance)
-      targetArea.right = maxArea.right;
-    if (Math.abs(maxArea.bottom.getValue() - rect.bottom) < snapDistance)
-      targetArea.bottom = maxArea.bottom;
-
-    if (targetArea.left == null && targetArea.right == null) {
-      targetArea.left = maxArea.left;
-      targetArea.right = maxArea.right;
-    } else if (targetArea.left == null) {
-      targetArea.left = new XTab();
-      targetArea.left.setValue(targetArea.right.getValue() - rect.getWidth());
-    } else if (targetArea.right == null) {
-      targetArea.right = new XTab();
-      targetArea.right.setValue(targetArea.left.getValue() + rect.getWidth());
-    }
-
-    if (targetArea.top == null && targetArea.bottom == null) {
-      targetArea.top = maxArea.top;
-      targetArea.bottom = maxArea.bottom;
-    } else if (targetArea.top == null) {
-      targetArea.top = new YTab();
-      targetArea.top.setValue(targetArea.bottom.getValue() - rect.getHeight());
-    } else if (targetArea.bottom == null) {
-      targetArea.bottom = new YTab();
-      targetArea.bottom.setValue(targetArea.top.getValue() + rect.getHeight());
-    }
 
     return true;
   }
