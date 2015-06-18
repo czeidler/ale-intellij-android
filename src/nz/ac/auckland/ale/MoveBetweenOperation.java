@@ -23,20 +23,26 @@ public class MoveBetweenOperation extends AbstractEditOperation {
   final private Area movedArea;
   final private Area targetArea;
   private IDirection direction;
+  private float orthInsertPosition;
 
   public MoveBetweenOperation(LayoutEditor layoutEditor, Area movedArea, Area mouseOverArea, float x, float y) {
     super(layoutEditor);
     this.movedArea = movedArea;
     this.targetArea = mouseOverArea;
 
-    if (layoutEditor.isOverTab(targetArea.getLeft(), x))
+    if (layoutEditor.isOverTab(targetArea.getLeft(), x)) {
       direction = new LeftDirection();
-    else if (layoutEditor.isOverTab(targetArea.getRight(), x))
+      orthInsertPosition = y;
+    } else if (layoutEditor.isOverTab(targetArea.getRight(), x)) {
       direction = new RightDirection();
-    else if (layoutEditor.isOverTab(targetArea.getTop(), y))
+      orthInsertPosition = y;
+    } else if (layoutEditor.isOverTab(targetArea.getTop(), y)) {
       direction = new TopDirection();
-    else if (layoutEditor.isOverTab(targetArea.getBottom(), y))
+      orthInsertPosition = x;
+    } else if (layoutEditor.isOverTab(targetArea.getBottom(), y)) {
       direction = new BottomDirection();
+      orthInsertPosition = x;
+    }
   }
 
   @Override
@@ -50,6 +56,16 @@ public class MoveBetweenOperation extends AbstractEditOperation {
     Variable tabOrth1 = direction.getOrthogonalTab1(targetArea);
     Variable tabOrth2 = direction.getOrthogonalTab2(targetArea);
     Variable newTab = direction.createTab();
+
+    float targetExtent = (float)(tabOrth2.getValue() - tabOrth1.getValue());
+    float movePrefExtent = (float)direction.getExtent(movedArea.getPreferredSize());
+    // newly created uninitialized components may have a movePrefExtent = -2; ignore them
+    if (movePrefExtent > 0 && movePrefExtent < targetExtent * 0.7) {
+      if (Math.abs(tabOrth1.getValue() - orthInsertPosition) < Math.abs(tabOrth2.getValue() - orthInsertPosition))
+        tabOrth2 = direction.createOrthogonalTab();
+      else
+        tabOrth1 = direction.createOrthogonalTab();
+    }
 
     direction.setTabs(movedArea, tab, tabOrth1, newTab, tabOrth2);
 
