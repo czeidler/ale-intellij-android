@@ -105,6 +105,10 @@ class LayoutSpecManager {
     return (RadViewComponent)myAreaToRadViewMap.get(area);
   }
 
+  public List<RadViewComponent> getChildren() {
+    return RadViewComponent.getViewComponents(myLayout.getChildren());
+  }
+
   public LayoutSpec getLayoutSpec() {
     return myLayoutSpec;
   }

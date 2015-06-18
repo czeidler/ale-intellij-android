@@ -226,6 +226,7 @@ class LayoutSpecXmlWriter {
 
     Edge edge = direction.getEdge(area, map);
     assert edge != null;
+
     // tab
     XmlAttribute tabTag = viewComponent.getTag().getAttribute(direction.getTabTag(), ALE_URI);
     if (tabTag != null) {
@@ -259,59 +260,23 @@ class LayoutSpecXmlWriter {
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
     }
 
-    // If valid connection exist leave
-
-    // Valid connected to connection?
-    String connectedToId = getAttrValue(viewComponent, direction.getTabTag());
-    if (!connectedToId.isEmpty()) {
-      List<Area> areas = direction.getAreas(edge);
-      for (Area neighbour : areas) {
-        String neighbourId = myLayoutSpecManager.getComponentFor(neighbour).getId();
-        if (neighbourId != null && neighbourId.equals(connectedToId)) {
-          clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
-          clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
-          return;
-        }
-      }
-    }
-
-    // Valid align with connection?
-    String alignedToId = getAttrValue(viewComponent, direction.getAlignTag());
-    if (!alignedToId.isEmpty()) {
-      List<Area> areas = direction.getOppositeAreas(edge);
-      for (Area neighbour : areas) {
-        String neighbourId = myLayoutSpecManager.getComponentFor(neighbour).getId();
-        if (neighbourId != null && neighbourId.equals(alignedToId)) {
-          clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
-          clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
-          return;
-        }
-      }
-    }
+    // Its important that we don't refer to any items that are not handled yet. The problem arises when adding new item to the layout. In
+    // this case the view id is not generated yet and the just written layout can't be displayed immediately.
 
     // Add either a connect or an align tag:
     Area connectToArea;
     String connectAttribute;
-    String checkForDuplicatesAttribute;
-    List<Area> checkForDuplicatesAreas;
     if (direction.getAreas(edge).size() > 0) {
       // connect to
-      connectToArea = direction.getAreas(edge).get(0);
+      connectToArea = pickHandledArea(direction.getAreas(edge), handledAreas);
       connectAttribute = direction.getConnectionTag();
-      checkForDuplicatesAttribute = direction.getOppositeConnectionTag();
-      checkForDuplicatesAreas = direction.getAreas(edge);
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
       clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
     }
     else if (direction.getOppositeAreas(edge).size() > 1) {
       // align with
-      connectToArea = direction.getOppositeAreas(edge).get(0);
-      // don't align with itself
-      if (connectToArea == area)
-        connectToArea = direction.getOppositeAreas(edge).get(1);
+      connectToArea = pickHandledArea(direction.getOppositeAreas(edge), handledAreas);
       connectAttribute = direction.getAlignTag();
-      checkForDuplicatesAttribute = direction.getOppositeAlignTag();
-      checkForDuplicatesAreas = direction.getOppositeAreas(edge);
       clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
       clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
     } else {
@@ -323,17 +288,20 @@ class LayoutSpecXmlWriter {
       clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
       return;
     }
-    // Check for an existing valid connection and clear the attribute if there is one. This avoids redundant attributes.
-    for (Area neighbour : checkForDuplicatesAreas) {
-      if (!handledAreas.contains(neighbour))
-        continue;
-      connectedToId = getAttrValue(myLayoutSpecManager.getComponentFor(neighbour), checkForDuplicatesAttribute);
-      if (connectedToId.equals(viewComponent.getId())) {
-        clearAttribute(viewComponent, ALE_URI, connectAttribute);
-        return;
-      }
+    if (connectToArea == null) {
+      clearAttribute(viewComponent, ALE_URI, connectAttribute);
+      return;
     }
+
     viewComponent.setAttribute(connectAttribute, ALE_URI, myLayoutSpecManager.getComponentFor(connectToArea).ensureId());
+  }
+
+  Area pickHandledArea(List<Area> pickFrom, List<Area> handledAreas) {
+    for (Area area : pickFrom) {
+      if (handledAreas.contains(area))
+        return area;
+    }
+    return null;
   }
 
   static private String getUniqueTabName(List<String> tabNames, Variable tab) {
@@ -364,9 +332,9 @@ class LayoutSpecXmlWriter {
     final List<String> freeYTabNames = new ArrayList<String>();
 
     List<Area> handledAreas = new ArrayList<Area>();
-    for (Map.Entry<RadComponent, Area> entry : myLayoutSpecManager.getRadViewToAreaMap().entrySet()) {
-      RadViewComponent viewComponent = (RadViewComponent)entry.getKey();
-      Area area = entry.getValue();
+    // We have to process the children in the correct order so don't iterate over the map directly! see writeSpecs for more info
+    for (RadViewComponent viewComponent : myLayoutSpecManager.getChildren()) {
+      Area area = myLayoutSpecManager.getRadViewToAreaMap().get(viewComponent);
       writeSpecs(viewComponent, area, xTabEdgeMap, freeXTabNames, new LeftTagDirection(), handledAreas);
       writeSpecs(viewComponent, area, yTabEdgeMap, freeYTabNames, new TopTagDirection(), handledAreas);
       writeSpecs(viewComponent, area, xTabEdgeMap, freeXTabNames, new RightTagDirection(), handledAreas);
