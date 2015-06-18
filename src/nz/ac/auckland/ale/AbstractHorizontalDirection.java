@@ -43,7 +43,22 @@ abstract public class AbstractHorizontalDirection implements IDirection {
   }
 
   @Override
+  public double getExtent(Area.Size size) {
+    return size.getWidth();
+  }
+
+  @Override
+  public double getOrthogonalExtent(Area.Size size) {
+    return size.getHeight();
+  }
+
+  @Override
   public Variable createTab() {
     return new XTab();
+  }
+
+  @Override
+  public Variable createOrthogonalTab() {
+    return new YTab();
   }
 }

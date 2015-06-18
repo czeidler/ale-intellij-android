@@ -33,7 +33,11 @@ public interface IDirection {
   List<Area> getAreas(Edge edge);
   List<Area> getOppositeAreas(Edge edge);
 
+  double getExtent(Area.Size size);
+  double getOrthogonalExtent(Area.Size size);
+
   Variable createTab();
+  Variable createOrthogonalTab();
 
   void setTab(Area area, Variable tab);
   void setOppositeTab(Area area, Variable tab);
