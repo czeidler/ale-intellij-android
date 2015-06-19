@@ -15,7 +15,6 @@
  */
 package com.intellij.android.designer.ale.model.layout.alm;
 
-import com.android.ide.common.rendering.api.ViewInfo;
 import com.intellij.android.designer.designSurface.graphics.DesignerGraphics;
 import com.intellij.android.designer.designSurface.graphics.DrawingStyle;
 import com.intellij.android.designer.model.RadViewComponent;
@@ -72,15 +71,12 @@ public class ALMDirectionResizePoint  extends com.intellij.designer.designSurfac
     if (!(component instanceof RadViewComponent))
       return super.getBounds(layer, component);
 
-    RadViewComponent container = (RadViewComponent)component.getParent();
-    IALMLayoutSpecs almLayoutSpecs = (IALMLayoutSpecs)container.getViewInfo().getViewObject();
-    ViewInfo viewInfo = ((RadViewComponent)component).getViewInfo();
-    if (viewInfo == null) {
+    IALMLayoutSpecs almLayoutSpecs = LayoutSpecManager.getLayoutSpec((RadViewComponent)component);
+    Area area = LayoutSpecManager.getArea((RadViewComponent)component);
+    if (area == null) {
       // not there yet wait and return an empty rect
       return new Rectangle();
     }
-    Object viewObject = ((RadViewComponent)component).getViewInfo().getViewObject();
-    Area area = almLayoutSpecs.getArea(viewObject);
     Area.Rect rect = area.getRect();
 
     return LayoutSpecManager.fromModel(layer, almLayoutSpecs, component.getParent(), rect);
