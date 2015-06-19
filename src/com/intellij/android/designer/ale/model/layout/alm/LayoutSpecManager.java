@@ -15,6 +15,7 @@
  */
 package com.intellij.android.designer.ale.model.layout.alm;
 
+import com.android.ide.common.rendering.api.ViewInfo;
 import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.designer.model.RadComponent;
 import nz.ac.auckland.ale.LayoutEditor;
@@ -28,7 +29,7 @@ import java.util.Map;
 
 class LayoutSpecManager {
   boolean myIsValid = true;
-  RadComponent myLayout;
+  RadComponent myLayoutContainer;
   IALMLayoutSpecs myALMLayoutSpecs;
   LayoutSpec myLayoutSpec;
   LayoutEditor myLayoutEditor;
@@ -55,9 +56,17 @@ class LayoutSpecManager {
     return tab;
   }
 
+  public Area findRemovedArea(List<Area> areas) {
+    for (Area area : areas) {
+      if (!myAreaToRadViewMap.containsKey(area))
+        return area;
+    }
+    return null;
+  }
+
   public void setTo(IALMLayoutSpecs almLayoutSpecs, RadComponent layout) {
     myIsValid = true;
-    myLayout = layout;
+    myLayoutContainer = layout;
     myALMLayoutSpecs = almLayoutSpecs;
     myLayoutSpec = LayoutSpec.clone(almLayoutSpecs.getAreas(), almLayoutSpecs.getCustomConstraints(), almLayoutSpecs.getLeftTab(),
                                     almLayoutSpecs.getTopTab(), almLayoutSpecs.getRightTab(), almLayoutSpecs.getBottomTab());
@@ -106,7 +115,7 @@ class LayoutSpecManager {
   }
 
   public List<RadViewComponent> getChildren() {
-    return RadViewComponent.getViewComponents(myLayout.getChildren());
+    return RadViewComponent.getViewComponents(myLayoutContainer.getChildren());
   }
 
   public LayoutSpec getLayoutSpec() {
@@ -130,19 +139,19 @@ class LayoutSpecManager {
   }
 
   public Rectangle fromModel(Component layer, Area.Rect rect) {
-    return fromModel(layer, myALMLayoutSpecs, myLayout, rect);
+    return fromModel(layer, myALMLayoutSpecs, myLayoutContainer, rect);
   }
 
   public Point fromModel(Component layer, Point point) {
-    return fromModel(layer, myALMLayoutSpecs, myLayout, point);
+    return fromModel(layer, myALMLayoutSpecs, myLayoutContainer, point);
   }
 
   public Rectangle toModel(Component layer, Rectangle rect) {
-    return toModel(layer, myALMLayoutSpecs, myLayout, rect);
+    return toModel(layer, myALMLayoutSpecs, myLayoutContainer, rect);
   }
 
   public Point toModel(Component layer, Point point) {
-    return toModel(layer, myALMLayoutSpecs, myLayout, point);
+    return toModel(layer, myALMLayoutSpecs, myLayoutContainer, point);
   }
 
   static public Rectangle fromModel(Component layer, IALMLayoutSpecs almLayoutSpecs, RadComponent layout, Area.Rect rect) {
@@ -197,5 +206,20 @@ class LayoutSpecManager {
     double offsetY = aleLayoutBounds.getY() - layoutBounds.getY();
     modelPoint.translate((int)offsetX, (int)offsetY);
     return modelPoint;
+  }
+
+  static public IALMLayoutSpecs getLayoutSpec(RadViewComponent child) {
+    Object viewObject = ((RadViewComponent)child.getParent()).getViewInfo().getViewObject();
+    assert viewObject instanceof IALMLayoutSpecs;
+    return  (IALMLayoutSpecs)viewObject;
+  }
+
+  static public Area getArea(RadViewComponent component) {
+    ViewInfo viewInfo = component.getViewInfo();
+    if (viewInfo == null)
+      return null;
+    Object view = viewInfo.getViewObject();
+    assert view != null;
+    return getLayoutSpec(component).getArea(view);
   }
 }

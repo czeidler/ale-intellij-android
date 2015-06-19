@@ -19,10 +19,7 @@ import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlTag;
 import nz.ac.auckland.ale.*;
-import nz.ac.auckland.alm.Area;
-import nz.ac.auckland.alm.LayoutSpec;
-import nz.ac.auckland.alm.XTab;
-import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.alm.*;
 import nz.ac.auckland.linsolve.Variable;
 import org.jetbrains.annotations.NotNull;
 
@@ -201,6 +198,10 @@ class LayoutSpecXmlWriter {
       attribute.delete();
   }
 
+  private static void clearAttribute(RadViewComponent view, String attributeName) {
+    clearAttribute(view, ALE_URI, attributeName);
+  }
+
   @NotNull
   static private String getAttrValue(RadViewComponent viewComponent, String attribute) {
     XmlTag tag = viewComponent.getTag();
@@ -220,9 +221,9 @@ class LayoutSpecXmlWriter {
 
     // Layout border: there are no border tags.
     if (direction.getTab(area) == direction.getTab(myLayoutSpec)) {
-      clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
-      clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
-      clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
+      clearAttribute(viewComponent, direction.getTabTag());
+      clearAttribute(viewComponent, direction.getConnectionTag());
+      clearAttribute(viewComponent, direction.getAlignTag());
       return;
     }
 
@@ -255,11 +256,11 @@ class LayoutSpecXmlWriter {
       if (tabFound) {
         freeTabNames.add(tabName);
         viewComponent.setAttribute(direction.getTabTag(), ALE_URI, tabName);
-        clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
-        clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
+        clearAttribute(viewComponent, direction.getConnectionTag());
+        clearAttribute(viewComponent, direction.getAlignTag());
         return;
       }
-      clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
+      clearAttribute(viewComponent, direction.getTabTag());
     }
 
     // Reuse existing connections:
@@ -271,8 +272,8 @@ class LayoutSpecXmlWriter {
       for (Area neighbour : areas) {
         String neighbourId = myLayoutSpecManager.getComponentFor(neighbour).getId();
         if (neighbourId != null && neighbourId.equals(connectedToId)) {
-          clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
-          clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
+          clearAttribute(viewComponent, direction.getTabTag());
+          clearAttribute(viewComponent, direction.getAlignTag());
           return;
         }
       }
@@ -285,8 +286,8 @@ class LayoutSpecXmlWriter {
       for (Area neighbour : areas) {
         String neighbourId = myLayoutSpecManager.getComponentFor(neighbour).getId();
         if (neighbourId != null && neighbourId.equals(alignedToId)) {
-          clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
-          clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
+          clearAttribute(viewComponent, direction.getTabTag());
+          clearAttribute(viewComponent, direction.getConnectionTag());
           return;
         }
       }
@@ -303,8 +304,8 @@ class LayoutSpecXmlWriter {
       connectAttribute = direction.getConnectionTag();
       checkForDuplicatesAttribute = direction.getOppositeConnectionTag();
       checkForDuplicatesAreas = direction.getAreas(edge);
-      clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
-      clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
+      clearAttribute(viewComponent, direction.getTabTag());
+      clearAttribute(viewComponent, direction.getAlignTag());
     }
     else if (direction.getOppositeAreas(edge).size() > 1) {
       // align with
@@ -312,20 +313,20 @@ class LayoutSpecXmlWriter {
       connectAttribute = direction.getAlignTag();
       checkForDuplicatesAttribute = direction.getOppositeAlignTag();
       checkForDuplicatesAreas = direction.getOppositeAreas(edge);
-      clearAttribute(viewComponent, ALE_URI, direction.getTabTag());
-      clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
+      clearAttribute(viewComponent, direction.getTabTag());
+      clearAttribute(viewComponent, direction.getConnectionTag());
     } else {
       // add tab
       String uniqueTabName = getUniqueTabName(freeTabNames, direction.getTab(area));
       freeTabNames.add(uniqueTabName);
       viewComponent.setAttribute(direction.getTabTag(), ALE_URI, uniqueTabName);
-      clearAttribute(viewComponent, ALE_URI, direction.getConnectionTag());
-      clearAttribute(viewComponent, ALE_URI, direction.getAlignTag());
+      clearAttribute(viewComponent, direction.getConnectionTag());
+      clearAttribute(viewComponent, direction.getAlignTag());
       return;
     }
     // There might be no valid connectToArea. Such an area only gets outgoing connections and is handled later.
     if (connectToArea == null) {
-      clearAttribute(viewComponent, ALE_URI, connectAttribute);
+      clearAttribute(viewComponent, connectAttribute);
       return;
     }
     // Check for an existing valid connection and clear the attribute if there is one. This avoids redundant attributes.
@@ -334,7 +335,7 @@ class LayoutSpecXmlWriter {
         continue;
       connectedToId = getAttrValue(myLayoutSpecManager.getComponentFor(neighbour), checkForDuplicatesAttribute);
       if (connectedToId.equals(viewComponent.getId())) {
-        clearAttribute(viewComponent, ALE_URI, connectAttribute);
+        clearAttribute(viewComponent, connectAttribute);
         return;
       }
     }
@@ -391,4 +392,91 @@ class LayoutSpecXmlWriter {
     }
   }
 
+  private <Tab> void clearRemovedComponent(RadViewComponent viewComponent, Area area, RadViewComponent removedView, ITagDirection direction,
+                                                  Map<Tab, Edge> map, List<String> tabNames) {
+    boolean needReconnect = false;
+
+    String componentId = removedView.getId();
+    if (componentId == null)
+      return;
+    String connectedToId = getAttrValue(viewComponent, direction.getConnectionTag());
+    if (componentId.equals(connectedToId)) {
+      clearAttribute(viewComponent, direction.getConnectionTag());
+      needReconnect = true;
+    }
+    String alignId = getAttrValue(viewComponent, direction.getAlignTag());
+    if (componentId.equals(alignId)) {
+      clearAttribute(viewComponent, direction.getAlignTag());
+      needReconnect = true;
+    }
+
+    if (!needReconnect)
+      return;
+    Edge edge = direction.getEdge(area, map);
+    // Add either a connect or an align tag:
+    Area connectToArea = null;
+    String connectAttribute = null;
+    if (direction.getAreas(edge).size() > 0) {
+      // connect to
+      List<Area> areas = direction.getAreas(edge);
+      Area removedArea = myLayoutSpecManager.findRemovedArea(areas);
+      assert removedArea != null;
+      connectToArea = pickArea(areas, null, removedArea);
+      connectAttribute = direction.getConnectionTag();
+    }
+    else if (direction.getOppositeAreas(edge).size() > 1) {
+      // align with
+      List<Area> areas = direction.getOppositeAreas(edge);
+      Area removedArea = myLayoutSpecManager.findRemovedArea(areas);
+      assert removedArea != null;
+      connectToArea = pickArea(areas, area, removedArea);
+      connectAttribute = direction.getAlignTag();
+    }
+    if (connectToArea == null) {
+      // insert a new tab
+      String newTabName = getUniqueTabName(tabNames, direction.createTab());
+      tabNames.add(newTabName);
+      viewComponent.setAttribute(direction.getTabTag(), ALE_URI, newTabName);
+      return;
+    }
+    RadViewComponent connectToView = myLayoutSpecManager.getComponentFor(connectToArea);
+    viewComponent.setAttribute(connectAttribute, ALE_URI, connectToView.ensureId());
+  }
+
+  static private <Tab extends Variable> void collectTabNames(Map<Tab, Edge> tabs, List<String> names) {
+    for (Map.Entry<Tab, Edge> entry : tabs.entrySet()) {
+      String tabName = entry.getKey().getName();
+      if (tabName != null)
+        names.add(tabName);
+    }
+  }
+
+  static private Area pickArea(List<Area> areas, Area veto, Area veto2) {
+    for (Area area : areas) {
+      if (area == veto || area == veto2)
+        continue;
+      return area;
+    }
+    return null;
+  }
+
+  public void clearRemovedComponent(RadViewComponent removedView) {
+    if (removedView.getId() == null)
+      return;
+    LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
+    Map<XTab, Edge> xTabEdgeMap = layoutEditor.getLayoutStructure().getXTabEdges();
+    Map<YTab, Edge> yTabEdgeMap = layoutEditor.getLayoutStructure().getYTabEdges();
+    List<String> xTabNames = new ArrayList<String>();
+    collectTabNames(xTabEdgeMap, xTabNames);
+    List<String> yTabNames = new ArrayList<String>();
+    collectTabNames(yTabEdgeMap, yTabNames);
+
+    for (RadViewComponent viewComponent : myLayoutSpecManager.getChildren()) {
+      Area area = myLayoutSpecManager.getRadViewToAreaMap().get(viewComponent);
+      clearRemovedComponent(viewComponent, area, removedView, new LeftTagDirection(), xTabEdgeMap, xTabNames);
+      clearRemovedComponent(viewComponent, area, removedView, new TopTagDirection(), yTabEdgeMap, yTabNames);
+      clearRemovedComponent(viewComponent, area, removedView, new RightTagDirection(), xTabEdgeMap, xTabNames);
+      clearRemovedComponent(viewComponent, area, removedView, new BottomTagDirection(), yTabEdgeMap, yTabNames);
+    }
+  }
 }

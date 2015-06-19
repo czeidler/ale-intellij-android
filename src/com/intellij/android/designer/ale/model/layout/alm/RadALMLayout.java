@@ -20,6 +20,7 @@ import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.android.designer.model.RadViewLayoutWithData;
 import com.intellij.designer.designSurface.*;
 import com.intellij.designer.model.RadComponent;
+import com.intellij.openapi.application.ApplicationManager;
 import nz.ac.auckland.alm.IALMLayoutSpecs;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,6 +44,10 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
     return myLayoutSpecManager;
   }
 
+  private void invalidateLayoutSpecManager() {
+    myLayoutSpecManager = null;
+  }
+
   @NotNull
   @Override
   public String[] getLayoutParams() {
@@ -51,10 +56,7 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
 
   @Override
   public EditOperation processChildOperation(OperationContext context) {
-    if (context.isAdd()) {
-      System.out.println("add");
-    }
-    if (context.isMove() || context.isCreate()) {
+    if (context.isMove() || context.isCreate() || context.isAdd()) {
       if (context.isTree())
         return null;
       return new ALMLayoutDragOperation(myContainer, context, getLayoutSpecManager());
@@ -73,5 +75,19 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
     }
 
     return selectionDecorator;
+  }
+
+  @Override
+  public void removeComponentFromContainer(final RadComponent component) {
+    super.removeComponentFromContainer(component);
+    ApplicationManager.getApplication().runWriteAction(new Runnable() {
+      @Override
+      public void run() {
+        LayoutSpecXmlWriter writer = new LayoutSpecXmlWriter(getLayoutSpecManager());
+        writer.clearRemovedComponent(((RadViewComponent)component));
+
+        invalidateLayoutSpecManager();
+      }
+    });
   }
 }
