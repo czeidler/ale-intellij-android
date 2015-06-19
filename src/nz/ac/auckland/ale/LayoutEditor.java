@@ -151,10 +151,6 @@ public class LayoutEditor {
     return layoutStructure;
   }
 
-  public LayoutSpec getLayoutSpec() {
-    return layoutSpec;
-  }
-
   public Area findContentAreaAt(float x, float y) {
     return getLayoutStructure().findContentAreaAt(x, y);
   }
