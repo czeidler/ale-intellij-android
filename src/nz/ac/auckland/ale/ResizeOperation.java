@@ -19,6 +19,7 @@ package nz.ac.auckland.ale;
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.alm.algebra.*;
 import nz.ac.auckland.linsolve.Variable;
 
 import java.util.ArrayList;

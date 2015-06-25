@@ -20,6 +20,7 @@ import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlTag;
 import nz.ac.auckland.ale.*;
 import nz.ac.auckland.alm.*;
+import nz.ac.auckland.alm.algebra.*;
 import nz.ac.auckland.linsolve.Variable;
 import org.jetbrains.annotations.NotNull;
 
@@ -214,6 +215,10 @@ class LayoutSpecXmlWriter {
     return value;
   }
 
+  static private boolean isArea(IArea area) {
+    return area instanceof Area;
+  }
+
   private <Tab> void writeSpecs(RadViewComponent viewComponent, Area area, Map<Tab, Edge> map, List<String> tabNames,
                                 ITagDirection direction, List<Area> handledAreas) {
     // Important: when new component are just added to the layout and the xml file is first read the new components don't have a id yet.
@@ -234,20 +239,24 @@ class LayoutSpecXmlWriter {
     XmlAttribute tabTag = viewComponent.getTag().getAttribute(direction.getTabTag(), ALE_URI);
     if (tabTag != null) {
       String tabName = tabTag.getValue();
-      List<Area> areas = direction.getAreas(edge);
-      List<Area> opAreas = direction.getOppositeAreas(edge);
+      List<IArea> areas = direction.getAreas(edge);
+      List<IArea> opAreas = direction.getOppositeAreas(edge);
       boolean tabFound = false;
-      for (Area neighbour : areas) {
-        if (getAttrValue(myLayoutSpecManager.getComponentFor(neighbour), direction.getOppositeTabTag()).equals(tabName)) {
+      for (IArea neighbour : areas) {
+        if (!isArea(neighbour))
+          continue;
+        if (getAttrValue(myLayoutSpecManager.getComponentFor((Area)neighbour), direction.getOppositeTabTag()).equals(tabName)) {
           tabFound = true;
           break;
         }
       }
       if (!tabFound) {
-        for (Area opNeighbour : opAreas) {
+        for (IArea opNeighbour : opAreas) {
+          if (!isArea(opNeighbour))
+            continue;
           if (opNeighbour == area)
             continue;
-          if (getAttrValue(myLayoutSpecManager.getComponentFor(opNeighbour), direction.getTabTag()).equals(tabName)) {
+          if (getAttrValue(myLayoutSpecManager.getComponentFor((Area)opNeighbour), direction.getTabTag()).equals(tabName)) {
             tabFound = true;
             break;
           }
@@ -263,14 +272,14 @@ class LayoutSpecXmlWriter {
       }
       clearAttribute(viewComponent, direction.getTabTag());
     }
-    
+
     // Add either a connect, an align tag or a tab:
     Area connectToArea = null;
     String connectAttribute = null;
     String checkForDuplicatesAttribute = null;
-    List<Area> checkForDuplicatesAreas = null;
-    List<Area> neighbours = direction.getAreas(edge);
-    List<Area> oppositeNeighbours = direction.getOppositeAreas(edge);
+    List<IArea> checkForDuplicatesAreas = null;
+    List<IArea> neighbours = direction.getAreas(edge);
+    List<IArea> oppositeNeighbours = direction.getOppositeAreas(edge);
     if (neighbours.size() > 0) {
       // connect to
       connectToArea = pickArea(neighbours, null);
@@ -310,10 +319,12 @@ class LayoutSpecXmlWriter {
     assert checkForDuplicatesAreas != null;
 
     // Check for an existing valid connection and clear the attribute if there is one. This avoids redundant attributes.
-    for (Area neighbour : checkForDuplicatesAreas) {
+    for (IArea neighbour : checkForDuplicatesAreas) {
+      if (!isArea(neighbour))
+        continue;
       if (!handledAreas.contains(neighbour))
         continue;
-      String neighbourId = getAttrValue(myLayoutSpecManager.getComponentFor(neighbour), checkForDuplicatesAttribute);
+      String neighbourId = getAttrValue(myLayoutSpecManager.getComponentFor((Area)neighbour), checkForDuplicatesAttribute);
       if (neighbourId.equals(viewComponent.getId())) {
         clearAttribute(viewComponent, connectAttribute);
         return;
@@ -322,14 +333,16 @@ class LayoutSpecXmlWriter {
     viewComponent.setAttribute(connectAttribute, ALE_URI, myLayoutSpecManager.getComponentFor(connectToArea).ensureId());
   }
 
-  Area pickArea(List<Area> pickFrom, Area veto) {
-    for (Area area : pickFrom) {
+  Area pickArea(List<IArea> pickFrom, Area veto) {
+    for (IArea area : pickFrom) {
+      if (!isArea(area))
+        continue;
       if (area == veto)
         continue;
-      RadViewComponent view = myLayoutSpecManager.getComponentFor(area);
+      RadViewComponent view = myLayoutSpecManager.getComponentFor((Area)area);
       if (view.getId() == null)
         continue;
-      return area;
+      return (Area)area;
     }
     return null;
   }
@@ -399,7 +412,7 @@ class LayoutSpecXmlWriter {
     String connectAttribute = null;
     if (direction.getAreas(edge).size() > 0) {
       // connect to
-      List<Area> areas = direction.getAreas(edge);
+      List<IArea> areas = direction.getAreas(edge);
       Area removedArea = myLayoutSpecManager.findRemovedArea(areas);
       assert removedArea != null;
       connectToArea = pickArea(areas, null, removedArea);
@@ -407,7 +420,7 @@ class LayoutSpecXmlWriter {
     }
     else if (direction.getOppositeAreas(edge).size() > 1) {
       // align with
-      List<Area> areas = direction.getOppositeAreas(edge);
+      List<IArea> areas = direction.getOppositeAreas(edge);
       Area removedArea = myLayoutSpecManager.findRemovedArea(areas);
       assert removedArea != null;
       connectToArea = pickArea(areas, area, removedArea);
@@ -432,11 +445,13 @@ class LayoutSpecXmlWriter {
     }
   }
 
-  static private Area pickArea(List<Area> areas, Area veto, Area veto2) {
-    for (Area area : areas) {
+  static private Area pickArea(List<IArea> areas, Area veto, Area veto2) {
+    for (IArea area : areas) {
+      if (!isArea(area))
+        continue;
       if (area == veto || area == veto2)
         continue;
-      return area;
+      return (Area)area;
     }
     return null;
   }

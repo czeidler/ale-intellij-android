@@ -56,10 +56,10 @@ class LayoutSpecManager {
     return tab;
   }
 
-  public Area findRemovedArea(List<Area> areas) {
-    for (Area area : areas) {
+  public Area findRemovedArea(List<IArea> areas) {
+    for (IArea area : areas) {
       if (!myAreaToRadViewMap.containsKey(area))
-        return area;
+        return (Area)area;
     }
     return null;
   }
@@ -73,15 +73,15 @@ class LayoutSpecManager {
     myRadViewToAreaMap.clear();
     myAreaToRadViewMap.clear();
 
-    List<Area> areas = almLayoutSpecs.getAreas();
+    List<IArea> areas = almLayoutSpecs.getAreas();
 
     for (RadComponent child : layout.getChildren()) {
       RadViewComponent viewComponent = (RadViewComponent)child;
-      Area area = almLayoutSpecs.getArea(viewComponent.getViewInfo().getViewObject());
-      Area clone = myLayoutSpec.getAreas().get(areas.indexOf(area));
+      IArea area = almLayoutSpecs.getArea(viewComponent.getViewInfo().getViewObject());
+      IArea clone = myLayoutSpec.getAreas().get(areas.indexOf(area));
 
-      myRadViewToAreaMap.put(viewComponent, clone);
-      myAreaToRadViewMap.put(clone, viewComponent);
+      myRadViewToAreaMap.put(viewComponent, (Area)clone);
+      myAreaToRadViewMap.put((Area)clone, viewComponent);
     }
 
     myLayoutEditor = new LayoutEditor(myLayoutSpec);

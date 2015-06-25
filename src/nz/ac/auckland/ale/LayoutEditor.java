@@ -19,6 +19,7 @@ import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.LayoutSpec;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.alm.algebra.LayoutStructure;
 import nz.ac.auckland.linsolve.Variable;
 
 
