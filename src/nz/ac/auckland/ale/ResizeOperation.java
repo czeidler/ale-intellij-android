@@ -85,7 +85,7 @@ public class ResizeOperation extends AbstractEditOperation {
       Tab currentTab = entry.getKey();
       if (currentTab == direction.getTab(area) || currentTab == direction.getOppositeTab(area))
         continue;
-      if (!Edge.isInChain(edges.get(currentTab), direction.getOppositeTab(area), edges, direction))
+      if (!Edge.isInChain(currentTab, direction.getOppositeTab(area), edges, direction))
         candidates.add(currentTab);
     }
   }

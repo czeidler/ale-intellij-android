@@ -72,7 +72,7 @@ public class EmptyAreaFinder {
       AreaCandidate rightCandidate = null;
       AreaCandidate topCandidate = null;
       AreaCandidate bottomCandidate = null;
-      if (area.left != layoutStructure.getLayoutSpec().getLeft()) {
+      if (area.left != layoutStructure.getLeft()) {
         XTab left = layoutStructure.findTabLeftOf(area.left.getValue());
         if (left != null) {
           leftCandidate = new AreaCandidate(area);
@@ -81,7 +81,7 @@ public class EmptyAreaFinder {
           else leftCandidate = null;
         }
       }
-      if (area.right != layoutStructure.getLayoutSpec().getRight()) {
+      if (area.right != layoutStructure.getRight()) {
         XTab right = layoutStructure.findTabRightOf(area.right.getValue());
         if (right != null) {
           rightCandidate = new AreaCandidate(area);
@@ -90,7 +90,7 @@ public class EmptyAreaFinder {
           else rightCandidate = null;
         }
       }
-      if (area.top != layoutStructure.getLayoutSpec().getTop()) {
+      if (area.top != layoutStructure.getTop()) {
         YTab top = layoutStructure.findTabAbove(area.top.getValue());
         if (top != null) {
           topCandidate = new AreaCandidate(area);
@@ -99,7 +99,7 @@ public class EmptyAreaFinder {
           else topCandidate = null;
         }
       }
-      if (area.bottom != layoutStructure.getLayoutSpec().getBottom()) {
+      if (area.bottom != layoutStructure.getBottom()) {
         YTab bottom = layoutStructure.findTabBellow(area.bottom.getValue());
         if (bottom != null) {
           bottomCandidate = new AreaCandidate(area);
