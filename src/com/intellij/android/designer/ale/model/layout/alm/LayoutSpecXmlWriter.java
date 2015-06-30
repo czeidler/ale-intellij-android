@@ -273,6 +273,8 @@ class LayoutSpecXmlWriter {
       clearAttribute(viewComponent, direction.getTabTag());
     }
 
+    // don't refer to the latest area
+    Area latestArea = myLayoutSpecManager.getAreaFor(myLayoutSpecManager.getChildren().get(myLayoutSpecManager.getChildren().size() - 1));
     // Add either a connect, an align tag or a tab:
     Area connectToArea = null;
     String connectAttribute = null;
@@ -282,7 +284,7 @@ class LayoutSpecXmlWriter {
     List<IArea> oppositeNeighbours = direction.getOppositeAreas(edge);
     if (neighbours.size() > 0) {
       // connect to
-      connectToArea = pickArea(neighbours, null);
+      connectToArea = pickArea(neighbours, latestArea, null);
       connectAttribute = direction.getConnectionTag();
       checkForDuplicatesAttribute = direction.getOppositeConnectionTag();
       checkForDuplicatesAreas = direction.getAreas(edge);
@@ -291,7 +293,7 @@ class LayoutSpecXmlWriter {
     }
     if (connectToArea == null && oppositeNeighbours.size() > 1) {
       // align with
-      connectToArea = pickArea(oppositeNeighbours, area);
+      connectToArea = pickArea(oppositeNeighbours, latestArea, area);
       connectAttribute = direction.getAlignTag();
       checkForDuplicatesAttribute = direction.getOppositeAlignTag();
       checkForDuplicatesAreas = direction.getOppositeAreas(edge);
@@ -331,20 +333,6 @@ class LayoutSpecXmlWriter {
       }
     }
     viewComponent.setAttribute(connectAttribute, ALE_URI, myLayoutSpecManager.getComponentFor(connectToArea).ensureId());
-  }
-
-  Area pickArea(List<IArea> pickFrom, Area veto) {
-    for (IArea area : pickFrom) {
-      if (!isArea(area))
-        continue;
-      if (area == veto)
-        continue;
-      RadViewComponent view = myLayoutSpecManager.getComponentFor((Area)area);
-      if (view.getId() == null)
-        continue;
-      return (Area)area;
-    }
-    return null;
   }
 
   static private String getUniqueTabName(List<String> tabNames, Variable tab) {
