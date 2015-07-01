@@ -15,17 +15,14 @@
  */
 package nz.ac.auckland.ale;
 
-import nz.ac.auckland.alm.Area;
-import nz.ac.auckland.alm.LayoutSpec;
-import nz.ac.auckland.alm.XTab;
-import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.alm.*;
+import nz.ac.auckland.alm.algebra.EmptyAreaCleaner;
 import nz.ac.auckland.alm.algebra.LayoutStructure;
 import nz.ac.auckland.linsolve.Variable;
 
 
 public class LayoutEditor {
   final LayoutSpec layoutSpec;
-  private Area removedArea;
   private Area createdArea;
   private LayoutStructure layoutStructure;
   IEditOperation currentEditOperation;
@@ -38,10 +35,6 @@ public class LayoutEditor {
 
   public LayoutEditor(LayoutSpec layoutSpec) {
     this.layoutSpec = layoutSpec;
-  }
-
-  public void setRemovedArea(Area removedArea) {
-    this.removedArea = removedArea;
   }
 
   public Area getCreatedArea() {
@@ -83,9 +76,11 @@ public class LayoutEditor {
   }
 
   public void perform() {
-    if (createdArea != null)
-      layoutSpec.addArea(createdArea);
     currentEditOperation.perform();
+
+    EmptyAreaCleaner cleaner = new EmptyAreaCleaner(layoutStructure);
+    cleaner.clean();
+    layoutStructure.applyToLayoutSpec(layoutSpec);
     layoutStructure = null;
   }
 
@@ -141,6 +136,10 @@ public class LayoutEditor {
     return currentEditOperation;
   }
 
+  public IEditOperation getDeleteOperation(Area area) {
+    return new RemoveOperation(this, area);
+  }
+
   public boolean isOverTab(Variable tab, float modelCoordinate) {
     double diff = Math.abs(tab.getValue() - modelCoordinate);
     return diff * getModelViewScale() < tabWidthView;
@@ -148,7 +147,7 @@ public class LayoutEditor {
 
   public LayoutStructure getLayoutStructure() {
     if (layoutStructure == null)
-      layoutStructure = new LayoutStructure(layoutSpec, removedArea);
+      layoutStructure = new LayoutStructure(layoutSpec, null);
     return layoutStructure;
   }
 
