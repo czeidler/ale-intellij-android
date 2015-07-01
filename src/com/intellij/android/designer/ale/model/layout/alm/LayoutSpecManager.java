@@ -29,10 +29,10 @@ import java.util.Map;
 
 class LayoutSpecManager {
   boolean myIsValid = true;
-  RadComponent myLayoutContainer;
-  IALMLayoutSpecs myALMLayoutSpecs;
-  LayoutSpec myLayoutSpec;
-  LayoutEditor myLayoutEditor;
+  final RadComponent myLayoutContainer;
+  final IALMLayoutSpecs myALMLayoutSpecs;
+  final LayoutSpec myLayoutSpec;
+  final LayoutEditor myLayoutEditor;
   final Map<RadComponent, Area> myRadViewToAreaMap = new HashMap<RadComponent, Area>();
   final Map<Area, RadComponent> myAreaToRadViewMap = new HashMap<Area, RadComponent>();
 
@@ -64,7 +64,7 @@ class LayoutSpecManager {
     return null;
   }
 
-  public void setTo(IALMLayoutSpecs almLayoutSpecs, RadComponent layout) {
+  public LayoutSpecManager(IALMLayoutSpecs almLayoutSpecs, RadComponent layout) {
     myIsValid = true;
     myLayoutContainer = layout;
     myALMLayoutSpecs = almLayoutSpecs;
@@ -73,15 +73,17 @@ class LayoutSpecManager {
     myRadViewToAreaMap.clear();
     myAreaToRadViewMap.clear();
 
-    List<IArea> areas = almLayoutSpecs.getAreas();
-
     for (RadComponent child : layout.getChildren()) {
       RadViewComponent viewComponent = (RadViewComponent)child;
-      IArea area = almLayoutSpecs.getArea(viewComponent.getViewInfo().getViewObject());
-      IArea clone = myLayoutSpec.getAreas().get(areas.indexOf(area));
-
-      myRadViewToAreaMap.put(viewComponent, (Area)clone);
-      myAreaToRadViewMap.put((Area)clone, viewComponent);
+      Area orgArea = readOrgAreaFromRadComponent(viewComponent);
+      if (orgArea == null) {
+        // not ready yet
+        invalidate();
+        break;
+      }
+      Area clone = getOrgToClonedArea(orgArea);
+      myRadViewToAreaMap.put(viewComponent, clone);
+      myAreaToRadViewMap.put(clone, viewComponent);
     }
 
     myLayoutEditor = new LayoutEditor(myLayoutSpec);
@@ -96,6 +98,18 @@ class LayoutSpecManager {
   public void addComponent(Area addedArea, RadComponent insertComponent) {
     myRadViewToAreaMap.put(insertComponent, addedArea);
     myAreaToRadViewMap.put(addedArea, insertComponent);
+  }
+
+  public Area readOrgAreaFromRadComponent(RadViewComponent viewComponent) {
+    ViewInfo viewInfo = viewComponent.getViewInfo();
+    if (viewInfo == null)
+      return null;
+    return myALMLayoutSpecs.getArea(viewInfo.getViewObject());
+  }
+
+  public Area getOrgToClonedArea(Area orgArea) {
+    List<IArea> areas = myALMLayoutSpecs.getAreas();
+    return (Area)myLayoutSpec.getAreas().get(areas.indexOf(orgArea));
   }
 
   public boolean isValid() {

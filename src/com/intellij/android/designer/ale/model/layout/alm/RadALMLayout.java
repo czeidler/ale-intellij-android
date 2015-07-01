@@ -15,13 +15,17 @@
  */
 package com.intellij.android.designer.ale.model.layout.alm;
 
+import com.android.ide.common.rendering.api.ViewInfo;
 import com.intellij.android.designer.designSurface.graphics.DrawingStyle;
 import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.android.designer.model.RadViewLayoutWithData;
 import com.intellij.designer.designSurface.*;
 import com.intellij.designer.model.RadComponent;
 import com.intellij.openapi.application.ApplicationManager;
+import nz.ac.auckland.ale.IEditOperation;
+import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.IALMLayoutSpecs;
+import nz.ac.auckland.alm.algebra.SoundLayoutBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -33,14 +37,19 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
   ResizeSelectionDecorator selectionDecorator;
   LayoutSpecManager myLayoutSpecManager;
 
-  private LayoutSpecManager getLayoutSpecManager() {
-    if (myLayoutSpecManager != null && myLayoutSpecManager.isValid())
-      return myLayoutSpecManager;
-    myLayoutSpecManager = new LayoutSpecManager();
+  ALMLayoutDecorator myRelativeDecorator;
 
+  protected LayoutSpecManager getLayoutSpecManager() {
     RadViewComponent layout = (RadViewComponent)myContainer;
     IALMLayoutSpecs almLayoutSpecs = (IALMLayoutSpecs)layout.getViewInfo().getViewObject();
-    myLayoutSpecManager.setTo(almLayoutSpecs, layout);
+
+    if (myLayoutSpecManager != null && myLayoutSpecManager.isValid() && myLayoutSpecManager.getALMLayoutSpecs() == almLayoutSpecs)
+      return myLayoutSpecManager;
+
+    myLayoutSpecManager = new LayoutSpecManager(almLayoutSpecs, layout);
+
+    SoundLayoutBuilder.fillWithEmptySpaces(myLayoutSpecManager.getLayoutSpec());
+
     return myLayoutSpecManager;
   }
 
@@ -66,6 +75,26 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
     return null;
   }
 
+  private StaticDecorator getRelativeDecorator() {
+    if (myRelativeDecorator == null) {
+      myRelativeDecorator = new ALMLayoutDecorator(myContainer, this);
+    }
+    return myRelativeDecorator;
+  }
+
+  @Override
+  public void addStaticDecorators(List<StaticDecorator> decorators, List<RadComponent> selection) {
+    for (RadComponent component : selection) {
+      if (component.getParent() == myContainer) {
+        if (!(myContainer.getParent().getLayout() instanceof ILayoutDecorator)) {
+          decorators.add(getRelativeDecorator());
+        }
+        return;
+      }
+    }
+    super.addStaticDecorators(decorators, selection);
+  }
+
   @Override
   public ComponentDecorator getChildSelectionDecorator(RadComponent component, List<RadComponent> selection) {
     if (selectionDecorator == null) {
@@ -80,11 +109,23 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
   @Override
   public void removeComponentFromContainer(final RadComponent component) {
     super.removeComponentFromContainer(component);
+
     ApplicationManager.getApplication().runWriteAction(new Runnable() {
       @Override
       public void run() {
-        LayoutSpecXmlWriter writer = new LayoutSpecXmlWriter(getLayoutSpecManager());
-        writer.clearRemovedComponent(((RadViewComponent)component));
+        // just reload the the
+        invalidateLayoutSpecManager();
+        myLayoutSpecManager = getLayoutSpecManager();
+        RadViewComponent viewComponent = (RadViewComponent)component;
+        Area orgArea = myLayoutSpecManager.readOrgAreaFromRadComponent(viewComponent);
+        if (orgArea == null)
+          return;
+        Area clone = myLayoutSpecManager.getOrgToClonedArea(orgArea);
+        IEditOperation deleteOperation = myLayoutSpecManager.getLayoutEditor().getDeleteOperation(clone);
+        deleteOperation.perform();
+
+        LayoutSpecXmlWriter xmlWriter = new LayoutSpecXmlWriter(myLayoutSpecManager);
+        xmlWriter.write();
 
         invalidateLayoutSpecManager();
       }
