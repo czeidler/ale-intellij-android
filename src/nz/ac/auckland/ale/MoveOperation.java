@@ -16,8 +16,11 @@
 package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.Area;
+import nz.ac.auckland.alm.EmptySpace;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.alm.algebra.LambdaTransformation;
+import nz.ac.auckland.alm.algebra.LayoutStructure;
 import nz.ac.auckland.linsolve.Variable;
 
 import java.util.ArrayList;
@@ -33,12 +36,17 @@ public class MoveOperation extends AbstractEditOperation {
 
     this.movedArea = movedArea;
 
+    LayoutStructure layoutStructure = layoutEditor.getLayoutStructure();
+    EmptySpace space = layoutStructure.makeAreaEmpty(movedArea);
+
     emptyAreaFinder = new EmptyAreaFinder(layoutEditor.getLayoutStructure());
     if (!emptyAreaFinder.find(dragX, dragY)) {
       emptyAreaFinder = null;
       return;
     }
     findTargetArea(dragRect, layoutEditor.getSnapModel());
+
+    layoutStructure.addAreaAtEmptySpace(movedArea, space);
   }
 
   private void findTargetArea(Area.Rect rect, float snapDistance) {
@@ -98,7 +106,16 @@ public class MoveOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
-    movedArea.setTo(targetArea.left, targetArea.top, targetArea.right, targetArea.bottom);
+    LayoutStructure structure = layoutEditor.getLayoutStructure();
+    LambdaTransformation trafo = new LambdaTransformation(structure);
+    // remove item before editing it
+    structure.makeAreaEmpty(movedArea);
+
+    EmptySpace space = trafo.makeSpace(targetArea.left, targetArea.top, targetArea.right, targetArea.bottom);
+    if (space == null)
+      throw new RuntimeException("algebra error!");
+
+    structure.addAreaAtEmptySpace(movedArea, space);
   }
 
   public class Feedback implements IEditOperationFeedback {

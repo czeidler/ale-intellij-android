@@ -17,6 +17,7 @@ package nz.ac.auckland.ale;
 
 
 import nz.ac.auckland.alm.Area;
+import nz.ac.auckland.alm.EmptySpace;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
 import nz.ac.auckland.alm.algebra.*;
@@ -99,16 +100,31 @@ public class ResizeOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
+    LayoutStructure structure = layoutEditor.getLayoutStructure();
+    LambdaTransformation trafo = new LambdaTransformation(structure);
+    // remove item before editing it
+    structure.makeAreaEmpty(resizeArea);
+
     XTab xTab = targetXTab;
-    if (detachX)
+    if (detachX) {
       xTab = new XTab();
+      xTab.setValue(xDirection.getTab(resizeArea).getValue());
+    }
     YTab yTab = targetYTab;
-    if (detachY)
+    if (detachY) {
       yTab = new YTab();
+      yTab.setValue(yDirection.getTab(resizeArea).getValue());
+    }
     if (xTab != null)
       xDirection.setTab(resizeArea, xTab);
     if (yTab != null)
       yDirection.setTab(resizeArea, yTab);
+
+    EmptySpace space = trafo.makeSpace(resizeArea.getLeft(), resizeArea.getTop(), resizeArea.getRight(), resizeArea.getBottom());
+    if (space == null)
+      throw new RuntimeException("algebra error!");
+
+    structure.addAreaAtEmptySpace(resizeArea, space);
   }
 
   public class Feedback implements IEditOperationFeedback {

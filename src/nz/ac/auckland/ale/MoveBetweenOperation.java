@@ -16,6 +16,7 @@
 package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.Area;
+import nz.ac.auckland.alm.EmptySpace;
 import nz.ac.auckland.alm.algebra.*;
 import nz.ac.auckland.linsolve.Variable;
 
@@ -31,6 +32,9 @@ public class MoveBetweenOperation extends AbstractEditOperation {
     this.movedArea = movedArea;
     this.targetArea = mouseOverArea;
 
+    LayoutStructure layoutStructure = layoutEditor.getLayoutStructure();
+    EmptySpace space = layoutStructure.makeAreaEmpty(movedArea);
+
     if (layoutEditor.isOverTab(targetArea.getLeft(), x)) {
       direction = new LeftDirection();
       orthInsertPosition = y;
@@ -44,6 +48,8 @@ public class MoveBetweenOperation extends AbstractEditOperation {
       direction = new BottomDirection();
       orthInsertPosition = x;
     }
+
+    layoutStructure.addAreaAtEmptySpace(movedArea, space);
   }
 
   @Override
@@ -53,24 +59,38 @@ public class MoveBetweenOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
+    LayoutStructure structure = layoutEditor.getLayoutStructure();
+    // remove items before editing them
+    structure.makeAreaEmpty(movedArea);
+    structure.removeArea(targetArea);
+
     Variable tab = direction.getTab(targetArea);
     Variable tabOrth1 = direction.getOrthogonalTab1(targetArea);
     Variable tabOrth2 = direction.getOrthogonalTab2(targetArea);
     Variable newTab = direction.createTab();
-
+    EmptySpace newSpace = null;
     float targetExtent = (float)(tabOrth2.getValue() - tabOrth1.getValue());
     float movePrefExtent = (float)direction.getExtent(movedArea.getPreferredSize());
     // newly created uninitialized components may have a movePrefExtent = -2; ignore them
     if (movePrefExtent > 0 && movePrefExtent < targetExtent * 0.7) {
-      if (Math.abs(tabOrth1.getValue() - orthInsertPosition) < Math.abs(tabOrth2.getValue() - orthInsertPosition))
+      newSpace = new EmptySpace();
+      direction.setTabs(newSpace, tab, tabOrth1, newTab, tabOrth2);
+      if (Math.abs(tabOrth1.getValue() - orthInsertPosition) < Math.abs(tabOrth2.getValue() - orthInsertPosition)) {
         tabOrth2 = direction.createOrthogonalTab();
-      else
+        direction.setOrthogonalTab1(newSpace, tabOrth2);
+      } else {
         tabOrth1 = direction.createOrthogonalTab();
+        direction.setOrthogonalTab2(newSpace, tabOrth1);
+      }
     }
 
     direction.setTabs(movedArea, tab, tabOrth1, newTab, tabOrth2);
-
     direction.setTab(targetArea, newTab);
+
+    structure.addArea(movedArea);
+    structure.addArea(targetArea);
+    if (newSpace != null)
+      structure.addArea(newSpace);
   }
 
   public class Feedback implements IEditOperationFeedback {

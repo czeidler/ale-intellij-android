@@ -19,6 +19,8 @@ package nz.ac.auckland.ale;
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.alm.algebra.LambdaTransformation;
+import nz.ac.auckland.alm.algebra.LayoutStructure;
 
 public class SwapOperation extends AbstractEditOperation {
   final Area draggedArea;
@@ -39,6 +41,12 @@ public class SwapOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
+    // update the layout structure
+    LayoutStructure layoutStructure = layoutEditor.getLayoutStructure();
+    // remove items before editing them
+    layoutStructure.removeArea(draggedArea);
+    layoutStructure.removeArea(targetArea);
+
     XTab left = draggedArea.getLeft();
     YTab top = draggedArea.getTop();
     XTab right = draggedArea.getRight();
@@ -46,6 +54,9 @@ public class SwapOperation extends AbstractEditOperation {
 
     draggedArea.setTo(targetArea.getLeft(), targetArea.getTop(), targetArea.getRight(), targetArea.getBottom());
     targetArea.setTo(left, top, right, bottom);
+
+    layoutStructure.addArea(draggedArea);
+    layoutStructure.addArea(targetArea);
   }
 
   public class Feedback implements IEditOperationFeedback {
