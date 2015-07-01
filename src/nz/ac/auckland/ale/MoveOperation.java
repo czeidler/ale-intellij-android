@@ -110,10 +110,14 @@ public class MoveOperation extends AbstractEditOperation {
     LambdaTransformation trafo = new LambdaTransformation(structure);
     // remove item before editing it
     structure.makeAreaEmpty(movedArea);
-
     EmptySpace space = trafo.makeSpace(targetArea.left, targetArea.top, targetArea.right, targetArea.bottom);
-    if (space == null)
+    if (space == null) {
+      System.out.println("Failed to make space for: AreaCandidate(" + targetArea.left + ", " + targetArea.top + ", " + targetArea.right
+                         + ", " + targetArea.bottom + ")");
+      System.out.println(structure.getAreas());
+      System.out.println(structure.getEmptySpaces());
       throw new RuntimeException("algebra error!");
+    }
 
     structure.addAreaAtEmptySpace(movedArea, space);
   }

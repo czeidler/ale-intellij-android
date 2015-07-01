@@ -121,8 +121,12 @@ public class ResizeOperation extends AbstractEditOperation {
       yDirection.setTab(resizeArea, yTab);
 
     EmptySpace space = trafo.makeSpace(resizeArea.getLeft(), resizeArea.getTop(), resizeArea.getRight(), resizeArea.getBottom());
-    if (space == null)
+    if (space == null) {
+      System.out.println("Failed to make space for: " + resizeArea);
+      System.out.println(structure.getAreas());
+      System.out.println(structure.getEmptySpaces());
       throw new RuntimeException("algebra error!");
+    }
 
     structure.addAreaAtEmptySpace(resizeArea, space);
   }
