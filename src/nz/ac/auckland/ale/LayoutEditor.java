@@ -152,10 +152,18 @@ public class LayoutEditor {
   }
 
   public Area findContentAreaAt(float x, float y) {
-    return getLayoutStructure().findContentAreaAt(x, y);
+    for (Area area : getLayoutStructure().getAreas()) {
+      if (area.getContentRect().contains(x, y))
+        return area;
+    }
+    return null;
   }
 
   public Area findAreaAt(float x, float y) {
-    return getLayoutStructure().findAreaAt(x, y);
+    for (Area area : getLayoutStructure().getAreas()) {
+      if (area.getRect().contains(x, y))
+        return area;
+    }
+    return null;
   }
 }
