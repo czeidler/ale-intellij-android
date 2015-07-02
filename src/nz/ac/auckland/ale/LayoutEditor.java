@@ -16,15 +16,15 @@
 package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.*;
+import nz.ac.auckland.alm.algebra.AlgebraData;
 import nz.ac.auckland.alm.algebra.EmptyAreaCleaner;
-import nz.ac.auckland.alm.algebra.LayoutStructure;
 import nz.ac.auckland.linsolve.Variable;
 
 
 public class LayoutEditor {
   final LayoutSpec layoutSpec;
   private Area createdArea;
-  private LayoutStructure layoutStructure;
+  private AlgebraData algebraData;
   IEditOperation currentEditOperation;
   // view / model coordinates
   float modelViewScale = 1;
@@ -78,10 +78,10 @@ public class LayoutEditor {
   public void perform() {
     currentEditOperation.perform();
 
-    EmptyAreaCleaner cleaner = new EmptyAreaCleaner(layoutStructure);
+    EmptyAreaCleaner cleaner = new EmptyAreaCleaner(algebraData);
     cleaner.clean();
-    layoutStructure.applyToLayoutSpec(layoutSpec);
-    layoutStructure = null;
+    algebraData.applyToLayoutSpec(layoutSpec);
+    algebraData = null;
   }
 
   private Area ensureSourceArea(Area area) {
@@ -145,14 +145,14 @@ public class LayoutEditor {
     return diff * getModelViewScale() < tabWidthView;
   }
 
-  public LayoutStructure getLayoutStructure() {
-    if (layoutStructure == null)
-      layoutStructure = new LayoutStructure(layoutSpec, null);
-    return layoutStructure;
+  public AlgebraData getAlgebraData() {
+    if (algebraData == null)
+      algebraData = new AlgebraData(layoutSpec, null);
+    return algebraData;
   }
 
   public Area findContentAreaAt(float x, float y) {
-    for (Area area : getLayoutStructure().getAreas()) {
+    for (Area area : getAlgebraData().getAreas()) {
       if (area.getContentRect().contains(x, y))
         return area;
     }
@@ -160,7 +160,7 @@ public class LayoutEditor {
   }
 
   public Area findAreaAt(float x, float y) {
-    for (Area area : getLayoutStructure().getAreas()) {
+    for (Area area : getAlgebraData().getAreas()) {
       if (area.getRect().contains(x, y))
         return area;
     }

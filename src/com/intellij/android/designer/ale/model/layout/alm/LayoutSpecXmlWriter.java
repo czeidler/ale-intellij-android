@@ -49,7 +49,7 @@ class LayoutSpecXmlWriter {
 
   public static final String ALE_URI = AUTO_URI;
 
-  interface ITagDirection extends IDirection {
+  interface ITagDirection<Tab extends Variable, OrthTab extends Variable> extends IDirection<Tab, OrthTab> {
     String getTabTag();
     String getOppositeTabTag();
     String getConnectionTag();
@@ -58,7 +58,7 @@ class LayoutSpecXmlWriter {
     String getOppositeAlignTag();
   }
 
-  static class LeftTagDirection extends LeftDirection implements ITagDirection {
+  static class LeftTagDirection extends LeftDirection implements ITagDirection<XTab, YTab> {
     @Override
     public String getTabTag() {
       return ATTR_LAYOUT_LEFT_TAB;
@@ -90,7 +90,7 @@ class LayoutSpecXmlWriter {
     }
   }
 
-  static class RightTagDirection extends RightDirection implements ITagDirection {
+  static class RightTagDirection extends RightDirection implements ITagDirection<XTab, YTab> {
     @Override
     public String getTabTag() {
       return ATTR_LAYOUT_RIGHT_TAB;
@@ -122,7 +122,7 @@ class LayoutSpecXmlWriter {
     }
   }
 
-  static class TopTagDirection extends TopDirection implements ITagDirection {
+  static class TopTagDirection extends TopDirection implements ITagDirection<YTab, XTab> {
     @Override
     public String getTabTag() {
       return ATTR_LAYOUT_TOP_TAB;
@@ -154,7 +154,7 @@ class LayoutSpecXmlWriter {
     }
   }
 
-  static class BottomTagDirection extends BottomDirection implements ITagDirection {
+  static class BottomTagDirection extends BottomDirection implements ITagDirection<YTab, XTab> {
     @Override
     public String getTabTag() {
       return ATTR_LAYOUT_BOTTOM_TAB;
@@ -266,8 +266,9 @@ class LayoutSpecXmlWriter {
     }
   }
 
-  private <Tab> void writeSpecs(RadViewComponent viewComponent, Area area, Map<Tab, Edge> map, List<String> tabNames,
-                                ITagDirection direction, List<Area> handledAreas) {
+  private <Tab extends Variable, OrthTab extends Variable>
+  void writeSpecs(RadViewComponent viewComponent, Area area, Map<Tab, Edge> map, List<String> tabNames, ITagDirection direction,
+                  List<Area> handledAreas) {
     // Important: when new component are just added to the layout and the xml file is first read the new components don't have a id yet.
     // Thus, don't add references to items without an id! Also see pickArea.
 
@@ -401,8 +402,8 @@ class LayoutSpecXmlWriter {
 
   public void write() {
     LayoutEditor layoutEditor = myLayoutSpecManager.getLayoutEditor();
-    Map<XTab, Edge> xTabEdgeMap = layoutEditor.getLayoutStructure().getXTabEdges();
-    Map<YTab, Edge> yTabEdgeMap = layoutEditor.getLayoutStructure().getYTabEdges();
+    Map<XTab, Edge> xTabEdgeMap = layoutEditor.getAlgebraData().getXTabEdges();
+    Map<YTab, Edge> yTabEdgeMap = layoutEditor.getAlgebraData().getYTabEdges();
     final List<String> xTabNames = new ArrayList<String>();
     final List<String> yTabNames = new ArrayList<String>();
 

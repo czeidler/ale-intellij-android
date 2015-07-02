@@ -32,8 +32,8 @@ public class MoveBetweenOperation extends AbstractEditOperation {
     this.movedArea = movedArea;
     this.targetArea = mouseOverArea;
 
-    LayoutStructure layoutStructure = layoutEditor.getLayoutStructure();
-    EmptySpace space = layoutStructure.makeAreaEmpty(movedArea);
+    AlgebraData layoutStructure = layoutEditor.getAlgebraData();
+    EmptySpace space = TilingAlgebra.makeAreaEmpty(layoutStructure, movedArea);
 
     if (layoutEditor.isOverTab(targetArea.getLeft(), x)) {
       direction = new LeftDirection();
@@ -49,7 +49,7 @@ public class MoveBetweenOperation extends AbstractEditOperation {
       orthInsertPosition = x;
     }
 
-    layoutStructure.addAreaAtEmptySpace(movedArea, space);
+    TilingAlgebra.addAreaAtEmptySpace(layoutStructure, movedArea, space);
   }
 
   @Override
@@ -59,9 +59,9 @@ public class MoveBetweenOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
-    LayoutStructure structure = layoutEditor.getLayoutStructure();
+    AlgebraData structure = layoutEditor.getAlgebraData();
     // remove items before editing them
-    structure.makeAreaEmpty(movedArea);
+    TilingAlgebra.makeAreaEmpty(structure, movedArea);
     structure.removeArea(targetArea);
 
     Variable tab = direction.getTab(targetArea);

@@ -19,8 +19,9 @@ import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.EmptySpace;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.alm.algebra.AlgebraData;
 import nz.ac.auckland.alm.algebra.LambdaTransformation;
-import nz.ac.auckland.alm.algebra.LayoutStructure;
+import nz.ac.auckland.alm.algebra.TilingAlgebra;
 import nz.ac.auckland.linsolve.Variable;
 
 import java.util.ArrayList;
@@ -36,17 +37,17 @@ public class MoveOperation extends AbstractEditOperation {
 
     this.movedArea = movedArea;
 
-    LayoutStructure layoutStructure = layoutEditor.getLayoutStructure();
-    EmptySpace space = layoutStructure.makeAreaEmpty(movedArea);
+    AlgebraData layoutStructure = layoutEditor.getAlgebraData();
+    EmptySpace space = TilingAlgebra.makeAreaEmpty(layoutStructure, movedArea);
 
-    emptyAreaFinder = new EmptyAreaFinder(layoutEditor.getLayoutStructure());
+    emptyAreaFinder = new EmptyAreaFinder(layoutEditor.getAlgebraData());
     if (!emptyAreaFinder.find(dragX, dragY)) {
       emptyAreaFinder = null;
       return;
     }
     findTargetArea(dragRect, layoutEditor.getSnapModel());
 
-    layoutStructure.addAreaAtEmptySpace(movedArea, space);
+    TilingAlgebra.addAreaAtEmptySpace(layoutStructure, movedArea, space);
   }
 
   private void findTargetArea(Area.Rect rect, float snapDistance) {
@@ -106,20 +107,24 @@ public class MoveOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
-    LayoutStructure structure = layoutEditor.getLayoutStructure();
+    AlgebraData structure = layoutEditor.getAlgebraData();
     LambdaTransformation trafo = new LambdaTransformation(structure);
     // remove item before editing it
-    structure.makeAreaEmpty(movedArea);
-    EmptySpace space = trafo.makeSpace(targetArea.left, targetArea.top, targetArea.right, targetArea.bottom);
-    if (space == null) {
-      System.out.println("Failed to make space for: AreaCandidate(" + targetArea.left + ", " + targetArea.top + ", " + targetArea.right
-                         + ", " + targetArea.bottom + ")");
-      System.out.println(structure.getAreas());
-      System.out.println(structure.getEmptySpaces());
-      throw new RuntimeException("algebra error!");
-    }
+    TilingAlgebra.makeAreaEmpty(structure, movedArea);
 
-    structure.addAreaAtEmptySpace(movedArea, space);
+    AreaCandidate maxArea = emptyAreaFinder.getMaxArea();
+
+    // debug:
+    System.out.println("Make space for: AreaCandidate(" + maxArea.left + ", " + maxArea.top + ", " + maxArea.right + ", "
+                       + maxArea.bottom + ")");
+    System.out.println(structure.getAreas());
+    System.out.println(structure.getEmptySpaces());
+
+    EmptySpace space = trafo.makeSpace(maxArea.left, maxArea.top, maxArea.right, maxArea.bottom);
+    if (space == null)
+      throw new RuntimeException("algebra error!");
+
+    TilingAlgebra.placeAreaInEmptySpace(structure, movedArea, space);
   }
 
   public class Feedback implements IEditOperationFeedback {

@@ -16,7 +16,7 @@
 package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.Area;
-import nz.ac.auckland.alm.algebra.LayoutStructure;
+import nz.ac.auckland.alm.algebra.TilingAlgebra;
 
 
 public class RemoveOperation extends AbstractEditOperation {
@@ -35,8 +35,7 @@ public class RemoveOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
-    LayoutStructure structure = layoutEditor.getLayoutStructure();
-    structure.makeAreaEmpty(area);
+    TilingAlgebra.makeAreaEmpty(layoutEditor.getAlgebraData(), area);
   }
 
   @Override

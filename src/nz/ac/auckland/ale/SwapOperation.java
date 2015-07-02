@@ -19,8 +19,7 @@ package nz.ac.auckland.ale;
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
-import nz.ac.auckland.alm.algebra.LambdaTransformation;
-import nz.ac.auckland.alm.algebra.LayoutStructure;
+import nz.ac.auckland.alm.algebra.AlgebraData;
 
 public class SwapOperation extends AbstractEditOperation {
   final Area draggedArea;
@@ -42,7 +41,7 @@ public class SwapOperation extends AbstractEditOperation {
   @Override
   public void perform() {
     // update the layout structure
-    LayoutStructure layoutStructure = layoutEditor.getLayoutStructure();
+    AlgebraData layoutStructure = layoutEditor.getAlgebraData();
     // remove items before editing them
     layoutStructure.removeArea(draggedArea);
     layoutStructure.removeArea(targetArea);

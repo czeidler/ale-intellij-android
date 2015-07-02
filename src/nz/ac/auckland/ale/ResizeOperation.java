@@ -15,7 +15,6 @@
  */
 package nz.ac.auckland.ale;
 
-
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.EmptySpace;
 import nz.ac.auckland.alm.XTab;
@@ -26,6 +25,7 @@ import nz.ac.auckland.linsolve.Variable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 
 public class ResizeOperation extends AbstractEditOperation {
   final Area resizeArea;
@@ -57,14 +57,14 @@ public class ResizeOperation extends AbstractEditOperation {
       assert yDirection != null;
     }
     if (xDirection != null) {
-      getResizeCandidateTabs(xCandidates, resizeArea, layoutEditor.getLayoutStructure().getXTabEdges(), xDirection);
+      getResizeCandidateTabs(xCandidates, resizeArea, layoutEditor.getAlgebraData().getXTabEdges(), xDirection);
       targetXTab = getTabAt(xCandidates, x);
       if (targetXTab == null && !layoutEditor.isOverTab(xDirection.getTab(resizeArea), x) && resizeArea.getRect().contains(x, y)
           && Math.abs(xDirection.getTab(resizeArea).getValue() - x) < layoutEditor.getDetachThresholdModel())
         detachX = true;
     }
     if (yDirection != null) {
-      getResizeCandidateTabs(yCandidates, resizeArea, layoutEditor.getLayoutStructure().getYTabEdges(), yDirection);
+      getResizeCandidateTabs(yCandidates, resizeArea, layoutEditor.getAlgebraData().getYTabEdges(), yDirection);
       targetYTab = getTabAt(yCandidates, y);
       if (targetYTab == null && !layoutEditor.isOverTab(yDirection.getTab(resizeArea), y) && resizeArea.getRect().contains(x, y)
           && Math.abs(yDirection.getTab(resizeArea).getValue() - y) < layoutEditor.getDetachThresholdModel())
@@ -100,10 +100,10 @@ public class ResizeOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
-    LayoutStructure structure = layoutEditor.getLayoutStructure();
+    AlgebraData structure = layoutEditor.getAlgebraData();
     LambdaTransformation trafo = new LambdaTransformation(structure);
     // remove item before editing it
-    structure.makeAreaEmpty(resizeArea);
+    TilingAlgebra.makeAreaEmpty(structure, resizeArea);
 
     XTab xTab = targetXTab;
     if (detachX) {
@@ -120,15 +120,16 @@ public class ResizeOperation extends AbstractEditOperation {
     if (yTab != null)
       yDirection.setTab(resizeArea, yTab);
 
-    EmptySpace space = trafo.makeSpace(resizeArea.getLeft(), resizeArea.getTop(), resizeArea.getRight(), resizeArea.getBottom());
-    if (space == null) {
-      System.out.println("Failed to make space for: " + resizeArea);
-      System.out.println(structure.getAreas());
-      System.out.println(structure.getEmptySpaces());
-      throw new RuntimeException("algebra error!");
-    }
+    // debug:
+    System.out.println("Make space for: " + resizeArea);
+    System.out.println(structure.getAreas());
+    System.out.println(structure.getEmptySpaces());
 
-    structure.addAreaAtEmptySpace(resizeArea, space);
+    EmptySpace space = trafo.makeSpace(resizeArea.getLeft(), resizeArea.getTop(), resizeArea.getRight(), resizeArea.getBottom());
+    if (space == null)
+      throw new RuntimeException("algebra error!");
+
+    TilingAlgebra.addAreaAtEmptySpace(structure, resizeArea, space);
   }
 
   public class Feedback implements IEditOperationFeedback {
