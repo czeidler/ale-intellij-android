@@ -29,10 +29,10 @@ public class EmptyAreaFinder {
   final List<XTab> maxAreaXTabs = new ArrayList<XTab>();
   final List<YTab> maxAreaYTabs = new ArrayList<YTab>();
 
-  LayoutStructure layoutStructure;
+  AlgebraData algebraData;
 
-  public EmptyAreaFinder(LayoutStructure layoutStructure) {
-    this.layoutStructure = cloneWithReplacedEmptySpaces(layoutStructure, null, null);
+  public EmptyAreaFinder(AlgebraData myAlgebraData) {
+    this.algebraData = cloneWithReplacedEmptySpaces(myAlgebraData, null, null);
   }
 
   public AreaCandidate getMaxArea() {
@@ -48,37 +48,55 @@ public class EmptyAreaFinder {
   }
 
   public boolean find(float x, float y) {
-    LambdaTransformation trafo = new LambdaTransformation(layoutStructure);
-    XTab left = findTabLeftOf(x);
-    YTab top = findTabAbove(y);
-    XTab right = findTabRightOf(x);
-    YTab bottom = findTabBellow(y);
-    if (left == null || top == null || right == null || bottom == null)
-      return false;
-    // Find max area: first find the min area then maximize it
-    EmptySpace space = trafo.makeSpace(left, top, right, bottom);
+    EmptySpace space = findEmptySpace(x, y);
     if (space == null)
       return false;
-    space = maximizeArea(space, maxAreaXTabs, maxAreaYTabs);
+    // start the search from the minimal space
+    EmptySpace minSpace = minimizeArea(space, x, y);
+    space = maximizeArea(minSpace, maxAreaXTabs, maxAreaYTabs);
 
     maxArea = new AreaCandidate(space.getLeft(), space.getTop(), space.getRight(), space.getBottom());
     return true;
   }
 
-  private XTab findTabLeftOf(double x) {
-    return findFirstSmallerTab(x, layoutStructure.getSortedXTabs(), layoutStructure.getXTabEdges(), new LeftDirection());
+  private EmptySpace findEmptySpace(float x, float y) {
+    for (EmptySpace space : algebraData.getEmptySpaces()) {
+      if (space.getRect().contains(x, y))
+        return space;
+    }
+    return null;
   }
 
-  private XTab findTabRightOf(double x) {
-    return findFirstLargerTab(x, layoutStructure.getSortedXTabs(), layoutStructure.getXTabEdges(), new RightDirection());
+  interface ITabFinder<Tab extends Variable> {
+    Tab find(double value);
   }
 
-  private YTab findTabAbove(double y) {
-    return findFirstSmallerTab(y, layoutStructure.getSortedYTabs(), layoutStructure.getYTabEdges(), new TopDirection());
+  class LeftTabFinder implements ITabFinder<XTab> {
+    @Override
+    public XTab find(double value) {
+      return findFirstSmallerTab(value, algebraData.getSortedXTabs(), algebraData.getXTabEdges(), new LeftDirection());
+    }
   }
 
-  private YTab findTabBellow(double y) {
-    return findFirstLargerTab(y, layoutStructure.getSortedYTabs(), layoutStructure.getYTabEdges(), new BottomDirection());
+  class RightTabFinder implements ITabFinder<XTab> {
+    @Override
+    public XTab find(double value) {
+      return findFirstLargerTab(value, algebraData.getSortedXTabs(), algebraData.getXTabEdges(), new RightDirection());
+    }
+  }
+
+  class TopTabFinder implements ITabFinder<YTab> {
+    @Override
+    public YTab find(double value) {
+      return findFirstSmallerTab(value, algebraData.getSortedYTabs(), algebraData.getYTabEdges(), new TopDirection());
+    }
+  }
+
+  class BottomTabFinder implements ITabFinder<YTab> {
+    @Override
+    public YTab find(double value) {
+      return findFirstLargerTab(value, algebraData.getSortedYTabs(), algebraData.getYTabEdges(), new BottomDirection());
+    }
   }
 
   private <Tab extends Variable> Tab findFirstLargerTab(double value, List<Tab> tabs, Map<Tab, Edge> edges, IDirection direction) {
@@ -121,9 +139,8 @@ public class EmptyAreaFinder {
     return null;
   }
 
-  private LayoutStructure cloneWithReplacedEmptySpaces(LayoutStructure layoutStructure, EmptySpace old, EmptySpace replacement) {
-    LayoutStructure clone = new LayoutStructure(layoutStructure.getLeft(), layoutStructure.getTop(), layoutStructure.getRight(),
-                                                layoutStructure.getBottom());
+  private AlgebraData cloneWithReplacedEmptySpaces(AlgebraData layoutStructure, EmptySpace old, EmptySpace replacement) {
+    AlgebraData clone = new AlgebraData(layoutStructure.getLeft(), layoutStructure.getTop(), layoutStructure.getRight(), layoutStructure.getBottom());
     for (Area area : layoutStructure.getAreas())
       clone.addArea(area);
 
@@ -138,6 +155,32 @@ public class EmptyAreaFinder {
     return clone;
   }
 
+  private EmptySpace minimizeArea(EmptySpace space, float x, float y) {
+    Map<XTab, Edge> xTabEdgeMap = algebraData.getXTabEdges();
+    Map<YTab, Edge> yTabEdgeMap = algebraData.getYTabEdges();
+    space = minimizeSide(algebraData, space, x, new LeftDirection(), xTabEdgeMap, new LeftTabFinder());
+    space = minimizeSide(algebraData, space, x, new RightDirection(), xTabEdgeMap, new RightTabFinder());
+    space = minimizeSide(algebraData, space, y, new TopDirection(), yTabEdgeMap, new TopTabFinder());
+    space = minimizeSide(algebraData, space, y, new BottomDirection(), yTabEdgeMap, new BottomTabFinder());
+    return space;
+  }
+
+  private <Tab extends Variable> EmptySpace minimizeSide(AlgebraData data, EmptySpace space, double target, IDirection direction,
+                                                         Map<Tab, Edge> map, ITabFinder<Tab> tabFinder) {
+    while (true) {
+      Tab tab = tabFinder.find(target);
+      assert tab != null; // there should always be a tab within the empty space!
+      if (tab == direction.getTab(space))
+        break;
+      target = tab.getValue();
+      // try to split
+      EmptySpace newSpace = TilingAlgebra.split(data, space, tab, map, direction);
+      if (newSpace != null)
+        return newSpace;
+    }
+    return space;
+  }
+
   private EmptySpace maximizeArea(EmptySpace area, List<XTab> containingXTabs, List<YTab> containingYTabs) {
     IDirection left = new LeftDirection();
     IDirection top = new TopDirection();
@@ -150,22 +193,22 @@ public class EmptyAreaFinder {
       double topSize = 0;
       double bottomSize = 0;
       EmptySpace leftCandidate = null;
-      LayoutStructure leftStructure = null;
+      AlgebraData leftStructure = null;
       EmptySpace rightCandidate = null;
-      LayoutStructure rightStructure = null;
+      AlgebraData rightStructure = null;
       EmptySpace topCandidate = null;
-      LayoutStructure topStructure = null;
+      AlgebraData topStructure = null;
       EmptySpace bottomCandidate = null;
-      LayoutStructure bottomStructure = null;
-      Map<XTab, Edge> xTabEdgeMap = layoutStructure.getXTabEdges();
-      Map<YTab, Edge> yTabEdgeMap = layoutStructure.getYTabEdges();
+      AlgebraData bottomStructure = null;
+      Map<XTab, Edge> xTabEdgeMap = algebraData.getXTabEdges();
+      Map<YTab, Edge> yTabEdgeMap = algebraData.getYTabEdges();
 
-      if (area.getLeft() != layoutStructure.getLeft()) {
+      if (area.getLeft() != algebraData.getLeft()) {
         leftCandidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
-        leftStructure = cloneWithReplacedEmptySpaces(layoutStructure, area, leftCandidate);
+        leftStructure = cloneWithReplacedEmptySpaces(algebraData, area, leftCandidate);
         leftStructure.removeArea(area);
         leftStructure.addArea(leftCandidate);
-        LambdaTransformation trafo = new LambdaTransformation(layoutStructure);
+        LambdaTransformation trafo = new LambdaTransformation(algebraData);
         if (trafo.extend(leftCandidate, left, xTabEdgeMap, bottom, yTabEdgeMap)) {
           leftSize = getSize(leftCandidate);
         } else {
@@ -173,12 +216,12 @@ public class EmptyAreaFinder {
           leftStructure = null;
         }
       }
-      if (area.getRight() != layoutStructure.getRight()) {
+      if (area.getRight() != algebraData.getRight()) {
         rightCandidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
-        rightStructure = cloneWithReplacedEmptySpaces(layoutStructure, area, rightCandidate);
+        rightStructure = cloneWithReplacedEmptySpaces(algebraData, area, rightCandidate);
         rightStructure.removeArea(area);
         rightStructure.addArea(rightCandidate);
-        LambdaTransformation trafo = new LambdaTransformation(layoutStructure);
+        LambdaTransformation trafo = new LambdaTransformation(algebraData);
         if (trafo.extend(rightCandidate, right, xTabEdgeMap, bottom, yTabEdgeMap)) {
           rightSize = getSize(rightCandidate);
         } else {
@@ -186,12 +229,12 @@ public class EmptyAreaFinder {
           rightStructure = null;
         }
       }
-      if (area.getTop() != layoutStructure.getTop()) {
+      if (area.getTop() != algebraData.getTop()) {
         topCandidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
-        topStructure = cloneWithReplacedEmptySpaces(layoutStructure, area, topCandidate);
+        topStructure = cloneWithReplacedEmptySpaces(algebraData, area, topCandidate);
         topStructure.removeArea(area);
         topStructure.addArea(topCandidate);
-        LambdaTransformation trafo = new LambdaTransformation(layoutStructure);
+        LambdaTransformation trafo = new LambdaTransformation(algebraData);
         if (trafo.extend(topCandidate, top, yTabEdgeMap, right, xTabEdgeMap)) {
           topSize = getSize(topCandidate);
         } else {
@@ -199,12 +242,12 @@ public class EmptyAreaFinder {
           topStructure = null;
         }
       }
-      if (area.getBottom() != layoutStructure.getBottom()) {
+      if (area.getBottom() != algebraData.getBottom()) {
         bottomCandidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
-        bottomStructure = cloneWithReplacedEmptySpaces(layoutStructure, area, bottomCandidate);
+        bottomStructure = cloneWithReplacedEmptySpaces(algebraData, area, bottomCandidate);
         bottomStructure.removeArea(area);
         bottomStructure.addArea(bottomCandidate);
-        LambdaTransformation trafo = new LambdaTransformation(layoutStructure);
+        LambdaTransformation trafo = new LambdaTransformation(algebraData);
         if (trafo.extend(bottomCandidate, bottom, yTabEdgeMap, right, xTabEdgeMap)) {
           bottomSize = getSize(bottomCandidate);
         } else {
@@ -215,19 +258,19 @@ public class EmptyAreaFinder {
 
       if (leftCandidate == null && rightCandidate == null && topCandidate == null && bottomCandidate == null) return area;
       if (leftCandidate != null && leftSize > rightSize && leftSize > topSize && leftSize > bottomSize) {
-        layoutStructure = leftStructure;
+        algebraData = leftStructure;
         area = leftCandidate;
         containingXTabs.add(area.getLeft());
       } else if (rightCandidate != null && rightSize > topSize && rightSize > bottomSize) {
-        layoutStructure = rightStructure;
+        algebraData = rightStructure;
         area = rightCandidate;
         containingXTabs.add(area.getRight());
       } else if (topCandidate != null && topSize > bottomSize) {
-        layoutStructure = topStructure;
+        algebraData = topStructure;
         area = topCandidate;
         containingYTabs.add(area.getTop());
       } else if (bottomCandidate != null) {
-        layoutStructure = bottomStructure;
+        algebraData = bottomStructure;
         area = bottomCandidate;
         containingYTabs.add(area.getBottom());
       }
