@@ -118,11 +118,13 @@ public class LayoutEditor {
       currentEditOperation = new MoveBetweenOperation(this, sourceArea, mouseOver, dragX, dragY);
       if (currentEditOperation.canPerform())
         return currentEditOperation;
-      // swap
-      mouseOver = findContentAreaAt(dragX, dragY);
-      if (mouseOver != null) {
-        currentEditOperation = new SwapOperation(this, sourceArea, mouseOver);
-        if (currentEditOperation.canPerform()) return currentEditOperation;
+      if (movedArea != null) {
+        // swap
+        mouseOver = findContentAreaAt(dragX, dragY);
+        if (mouseOver != null) {
+          currentEditOperation = new SwapOperation(this, sourceArea, mouseOver);
+          if (currentEditOperation.canPerform()) return currentEditOperation;
+        }
       }
     }
 
