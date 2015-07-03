@@ -33,10 +33,16 @@ public class ResizeOperation extends AbstractEditOperation {
   final List<YTab> yCandidates = new ArrayList<YTab>();
   XTab targetXTab;
   YTab targetYTab;
+  Candidate targetCandidate;
   boolean detachX = false;
   boolean detachY = false;
   IDirection xDirection;
   IDirection yDirection;
+
+  class Candidate {
+    public AlgebraData algebraData;
+    public EmptySpace emptySpace;
+  }
 
   public ResizeOperation(LayoutEditor layoutEditor, Area resizeArea, XTab xTab, YTab yTab, float x, float y) {
     super(layoutEditor);
@@ -58,26 +64,73 @@ public class ResizeOperation extends AbstractEditOperation {
     }
     if (xDirection != null) {
       getResizeCandidateTabs(xCandidates, resizeArea, layoutEditor.getAlgebraData().getXTabEdges(), xDirection);
-      targetXTab = getTabAt(xCandidates, x);
+      targetXTab = getTabAt(xCandidates, x, xDirection, new BottomDirection());
       if (targetXTab == null && !layoutEditor.isOverTab(xDirection.getTab(resizeArea), x) && resizeArea.getRect().contains(x, y)
-          && Math.abs(xDirection.getTab(resizeArea).getValue() - x) < layoutEditor.getDetachThresholdModel())
+          && Math.abs(xDirection.getTab(resizeArea).getValue() - x) < layoutEditor.getDetachThresholdModel()) {
+        detach(xDirection, new BottomDirection());
         detachX = true;
+      }
     }
     if (yDirection != null) {
       getResizeCandidateTabs(yCandidates, resizeArea, layoutEditor.getAlgebraData().getYTabEdges(), yDirection);
-      targetYTab = getTabAt(yCandidates, y);
+      targetYTab = getTabAt(yCandidates, y, yDirection, new RightDirection());
       if (targetYTab == null && !layoutEditor.isOverTab(yDirection.getTab(resizeArea), y) && resizeArea.getRect().contains(x, y)
-          && Math.abs(yDirection.getTab(resizeArea).getValue() - y) < layoutEditor.getDetachThresholdModel())
+          && Math.abs(yDirection.getTab(resizeArea).getValue() - y) < layoutEditor.getDetachThresholdModel()) {
+        detach(yDirection, new RightDirection());
         detachY = true;
+      }
     }
   }
 
-  private <Tab extends Variable> Tab getTabAt(List<Tab> tabs, float position) {
+  private Candidate getNewCandidate() {
+    if (targetCandidate == null) {
+      Candidate candidate = new Candidate();
+      candidate.algebraData = layoutEditor.cloneWithReplacedEmptySpaces(layoutEditor.getAlgebraData());
+      candidate.emptySpace = TilingAlgebra.makeAreaEmpty(candidate.algebraData, resizeArea);
+      return candidate;
+    } else {
+      Candidate candidate = new Candidate();
+      EmptySpace oldSpace = targetCandidate.emptySpace;
+      EmptySpace replacement = new EmptySpace(oldSpace.getLeft(), oldSpace.getTop(), oldSpace.getRight(), oldSpace.getBottom());
+      candidate.algebraData = layoutEditor.cloneWithReplacedEmptySpaces(targetCandidate.algebraData, oldSpace, replacement);
+      candidate.emptySpace = replacement;
+      return candidate;
+    }
+  }
+
+  private <Tab extends Variable> Tab getTabAt(List<Tab> tabs, float position, IDirection direction, IDirection orthDirection) {
     for (Tab tab : tabs) {
-      if (layoutEditor.isOverTab(tab, position))
-        return tab;
+      if (layoutEditor.isOverTab(tab, position)) {
+        Candidate candidate = getNewCandidate();
+        EmptySpace resizeSpace = candidate.emptySpace;
+        if (TilingAlgebra.resize(candidate.algebraData, resizeSpace, tab, direction, orthDirection)) {
+          targetCandidate = candidate;
+          return tab;
+        }
+      }
     }
     return null;
+  }
+
+  private <Tab extends Variable, OrthTab extends Variable>
+  void detach(IDirection<Tab, OrthTab> direction, IDirection<OrthTab, Tab> orthDirection) {
+    Candidate candidate = getNewCandidate();
+    AlgebraData data = candidate.algebraData;
+    EmptySpace resizeSpace = candidate.emptySpace;
+    while (TilingAlgebra.extend(data, resizeSpace, direction, orthDirection));
+
+    Tab newTab = direction.createTab();
+    data.removeArea(resizeSpace);
+    EmptySpace newEmptySpace = new EmptySpace();
+    direction.setTabs(newEmptySpace, direction.getTab(resizeSpace), direction.getOrthogonalTab1(resizeSpace),
+                      direction.getOppositeTab(resizeSpace), direction.getOrthogonalTab2(resizeSpace));
+    direction.setOppositeTab(newEmptySpace, newTab);
+    direction.setTab(resizeSpace, newTab);
+
+    data.addArea(resizeSpace);
+    data.addArea(newEmptySpace);
+
+    targetCandidate = candidate;
   }
 
   private <Tab extends Variable> void getResizeCandidateTabs(List<Tab> candidates, Area area, Map<Tab, Edge> edges, IDirection direction) {
@@ -100,36 +153,17 @@ public class ResizeOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
-    AlgebraData structure = layoutEditor.getAlgebraData();
-    LambdaTransformation trafo = new LambdaTransformation(structure);
-    // remove item before editing it
-    TilingAlgebra.makeAreaEmpty(structure, resizeArea);
+    AlgebraData algebraData = layoutEditor.getAlgebraData();
+    algebraData.removeArea(resizeArea);
+    // replace empty spaces
+    while (algebraData.getEmptySpaces().size() > 0)
+      algebraData.removeArea(algebraData.getEmptySpaces().get(0));
+    for (EmptySpace emptySpace : targetCandidate.algebraData.getEmptySpaces())
+      algebraData.addArea(emptySpace);
 
-    XTab xTab = targetXTab;
-    if (detachX) {
-      xTab = new XTab();
-      xTab.setValue(xDirection.getTab(resizeArea).getValue());
-    }
-    YTab yTab = targetYTab;
-    if (detachY) {
-      yTab = new YTab();
-      yTab.setValue(yDirection.getTab(resizeArea).getValue());
-    }
-    if (xTab != null)
-      xDirection.setTab(resizeArea, xTab);
-    if (yTab != null)
-      yDirection.setTab(resizeArea, yTab);
-
-    // debug:
-    System.out.println("Make space for: " + resizeArea);
-    System.out.println(structure.getAreas());
-    System.out.println(structure.getEmptySpaces());
-
-    EmptySpace space = trafo.makeSpace(resizeArea.getLeft(), resizeArea.getTop(), resizeArea.getRight(), resizeArea.getBottom());
-    if (space == null)
-      throw new RuntimeException("algebra error!");
-
-    TilingAlgebra.addAreaAtEmptySpace(structure, resizeArea, space);
+    EmptySpace target = targetCandidate.emptySpace;
+    resizeArea.setTo(target.getLeft(), target.getTop(), target.getRight(), target.getBottom());
+    TilingAlgebra.addAreaAtEmptySpace(algebraData, resizeArea, target);
   }
 
   public class Feedback implements IEditOperationFeedback {
