@@ -124,6 +124,7 @@ public class MoveOperation extends AbstractEditOperation {
     if (space == null)
       throw new RuntimeException("algebra error!");
 
+    movedArea.setTo(targetArea.left, targetArea.top, targetArea.right, targetArea.bottom);
     TilingAlgebra.placeAreaInEmptySpace(structure, movedArea, space);
   }
 
