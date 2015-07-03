@@ -20,7 +20,6 @@ import nz.ac.auckland.alm.EmptySpace;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
 import nz.ac.auckland.alm.algebra.AlgebraData;
-import nz.ac.auckland.alm.algebra.LambdaTransformation;
 import nz.ac.auckland.alm.algebra.TilingAlgebra;
 import nz.ac.auckland.linsolve.Variable;
 
@@ -51,18 +50,20 @@ public class MoveOperation extends AbstractEditOperation {
   }
 
   private void findTargetArea(Area.Rect rect, float snapDistance) {
-    AreaCandidate maxArea = emptyAreaFinder.getMaxArea();
+    EmptySpace maxArea = emptyAreaFinder.getMaxArea();
     targetArea = new AreaCandidate();
 
     // place rect in it
-    targetArea.left = getClosestSnapTab(maxArea.left, maxArea.right, emptyAreaFinder.getMaxAreaXTabs(), rect.left, snapDistance);
-    targetArea.right = getClosestSnapTab(maxArea.left, maxArea.right, emptyAreaFinder.getMaxAreaXTabs(), rect.right, snapDistance);
-    targetArea.top = getClosestSnapTab(maxArea.top, maxArea.bottom, emptyAreaFinder.getMaxAreaYTabs(), rect.top, snapDistance);
-    targetArea.bottom = getClosestSnapTab(maxArea.top, maxArea.bottom, emptyAreaFinder.getMaxAreaYTabs(), rect.bottom, snapDistance);
+    targetArea.left = getClosestSnapTab(maxArea.getLeft(), maxArea.getRight(), emptyAreaFinder.getMaxAreaXTabs(), rect.left, snapDistance);
+    targetArea.right = getClosestSnapTab(maxArea.getLeft(), maxArea.getRight(), emptyAreaFinder.getMaxAreaXTabs(), rect.right,
+                                         snapDistance);
+    targetArea.top = getClosestSnapTab(maxArea.getTop(), maxArea.getBottom(), emptyAreaFinder.getMaxAreaYTabs(), rect.top, snapDistance);
+    targetArea.bottom = getClosestSnapTab(maxArea.getTop(), maxArea.getBottom(), emptyAreaFinder.getMaxAreaYTabs(), rect.bottom,
+                                          snapDistance);
 
     if (targetArea.left == null && targetArea.right == null) {
-      targetArea.left = maxArea.left;
-      targetArea.right = maxArea.right;
+      targetArea.left = maxArea.getLeft();
+      targetArea.right = maxArea.getRight();
     } else if (targetArea.left == null) {
       targetArea.left = new XTab();
       targetArea.left.setValue(targetArea.right.getValue() - rect.getWidth());
@@ -72,8 +73,8 @@ public class MoveOperation extends AbstractEditOperation {
     }
 
     if (targetArea.top == null && targetArea.bottom == null) {
-      targetArea.top = maxArea.top;
-      targetArea.bottom = maxArea.bottom;
+      targetArea.top = maxArea.getTop();
+      targetArea.bottom = maxArea.getBottom();
     } else if (targetArea.top == null) {
       targetArea.top = new YTab();
       targetArea.top.setValue(targetArea.bottom.getValue() - rect.getHeight());
@@ -107,32 +108,23 @@ public class MoveOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
-    AlgebraData structure = layoutEditor.getAlgebraData();
-    LambdaTransformation trafo = new LambdaTransformation(structure);
-    // remove item before editing it
-    TilingAlgebra.makeAreaEmpty(structure, movedArea);
-
-    AreaCandidate maxArea = emptyAreaFinder.getMaxArea();
-
-    // debug:
-    System.out.println("Make space for: AreaCandidate(" + maxArea.left + ", " + maxArea.top + ", " + maxArea.right + ", "
-                       + maxArea.bottom + ")");
-    System.out.println(structure.getAreas());
-    System.out.println(structure.getEmptySpaces());
-
-    EmptySpace space = trafo.makeSpace(maxArea.left, maxArea.top, maxArea.right, maxArea.bottom);
-    if (space == null)
-      throw new RuntimeException("algebra error!");
+    AlgebraData algebraData = layoutEditor.getAlgebraData();
+    AlgebraData transformedAlgebraData = emptyAreaFinder.getTransformedAlgebraData();
+    // replace empty spaces
+    while (algebraData.getEmptySpaces().size() > 0)
+      algebraData.removeArea(algebraData.getEmptySpaces().get(0));
+    for (EmptySpace emptySpace : transformedAlgebraData.getEmptySpaces())
+      algebraData.addArea(emptySpace);
 
     movedArea.setTo(targetArea.left, targetArea.top, targetArea.right, targetArea.bottom);
-    TilingAlgebra.placeAreaInEmptySpace(structure, movedArea, space);
+    TilingAlgebra.placeAreaInEmptySpace(algebraData, movedArea, emptyAreaFinder.maxArea);
   }
 
   public class Feedback implements IEditOperationFeedback {
     public AreaCandidate getTargetArea() {
       return targetArea;
     }
-    public AreaCandidate getMaxArea() {
+    public EmptySpace getMaxArea() {
       if (emptyAreaFinder == null)
         return null;
       return emptyAreaFinder.getMaxArea();

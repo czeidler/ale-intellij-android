@@ -25,7 +25,7 @@ import java.util.Map;
 
 
 public class EmptyAreaFinder {
-  AreaCandidate maxArea;
+  EmptySpace maxArea;
   final List<XTab> maxAreaXTabs = new ArrayList<XTab>();
   final List<YTab> maxAreaYTabs = new ArrayList<YTab>();
 
@@ -35,7 +35,7 @@ public class EmptyAreaFinder {
     this.algebraData = cloneWithReplacedEmptySpaces(myAlgebraData, null, null);
   }
 
-  public AreaCandidate getMaxArea() {
+  public EmptySpace getMaxArea() {
     return maxArea;
   }
 
@@ -47,15 +47,17 @@ public class EmptyAreaFinder {
     return maxAreaYTabs;
   }
 
+  public AlgebraData getTransformedAlgebraData() {
+    return algebraData;
+  }
+
   public boolean find(float x, float y) {
     EmptySpace space = findEmptySpace(x, y);
     if (space == null)
       return false;
     // start the search from the minimal space
     EmptySpace minSpace = minimizeArea(space, x, y);
-    space = maximizeArea(minSpace, maxAreaXTabs, maxAreaYTabs);
-
-    maxArea = new AreaCandidate(space.getLeft(), space.getTop(), space.getRight(), space.getBottom());
+    maxArea = maximizeArea(minSpace, maxAreaXTabs, maxAreaYTabs);
     return true;
   }
 
@@ -222,21 +224,19 @@ public class EmptyAreaFinder {
     IDirection<XTab, YTab> right = new RightDirection();
     IDirection<YTab, XTab> bottom = new BottomDirection();
 
-    AlgebraData currentAlgebraData = algebraData;
-
     while (true) {
       MaximizeCandidate<XTab, YTab> leftCandidate = new MaximizeCandidate<XTab, YTab>(containingXTabs, left);
       MaximizeCandidate<YTab, XTab> topCandidate = new MaximizeCandidate<YTab, XTab>(containingYTabs, top);
       MaximizeCandidate<XTab, YTab> rightCandidate = new MaximizeCandidate<XTab, YTab>(containingXTabs, right);
       MaximizeCandidate<YTab, XTab> bottomCandidate = new MaximizeCandidate<YTab, XTab>(containingYTabs, bottom);
 
-      Map<XTab, Edge> xTabEdgeMap = currentAlgebraData.getXTabEdges();
-      Map<YTab, Edge> yTabEdgeMap = currentAlgebraData.getYTabEdges();
+      Map<XTab, Edge> xTabEdgeMap = algebraData.getXTabEdges();
+      Map<YTab, Edge> yTabEdgeMap = algebraData.getYTabEdges();
 
-      double leftSize = leftCandidate.maximize(area, currentAlgebraData, algebraData.getLeft(), xTabEdgeMap, bottom, yTabEdgeMap);
-      double rightSize = rightCandidate.maximize(area, currentAlgebraData, algebraData.getRight(), xTabEdgeMap, bottom, yTabEdgeMap);
-      double topSize = topCandidate.maximize(area, currentAlgebraData, algebraData.getTop(), yTabEdgeMap, right, xTabEdgeMap);
-      double bottomSize = bottomCandidate.maximize(area, currentAlgebraData, algebraData.getBottom(), yTabEdgeMap, right, xTabEdgeMap);
+      double leftSize = leftCandidate.maximize(area, algebraData, algebraData.getLeft(), xTabEdgeMap, bottom, yTabEdgeMap);
+      double rightSize = rightCandidate.maximize(area, algebraData, algebraData.getRight(), xTabEdgeMap, bottom, yTabEdgeMap);
+      double topSize = topCandidate.maximize(area, algebraData, algebraData.getTop(), yTabEdgeMap, right, xTabEdgeMap);
+      double bottomSize = bottomCandidate.maximize(area, algebraData, algebraData.getBottom(), yTabEdgeMap, right, xTabEdgeMap);
 
       // choose best candidate
       MaximizeCandidate candidate = null;
@@ -254,7 +254,7 @@ public class EmptyAreaFinder {
       if (candidate != null) {
         candidate.containingTabs.add(candidate.direction.getTab(area));
         area = candidate.candidate;
-        currentAlgebraData = candidate.data;
+        algebraData = candidate.data;
       }
     }
   }

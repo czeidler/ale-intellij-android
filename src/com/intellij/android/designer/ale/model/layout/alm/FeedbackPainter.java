@@ -21,10 +21,7 @@ import com.intellij.android.designer.designSurface.graphics.DrawingStyle;
 import com.intellij.android.designer.model.layout.relative.MultiLineTooltipManager;
 import com.intellij.designer.model.RadVisualComponent;
 import nz.ac.auckland.ale.*;
-import nz.ac.auckland.alm.Area;
-import nz.ac.auckland.alm.LayoutSpec;
-import nz.ac.auckland.alm.XTab;
-import nz.ac.auckland.alm.YTab;
+import nz.ac.auckland.alm.*;
 import nz.ac.auckland.linsolve.Variable;
 import org.jetbrains.annotations.NotNull;
 
@@ -111,17 +108,17 @@ class FeedbackPainter extends JComponent {
   }
 
   private void paintMoveFeedback(@NotNull DesignerGraphics graphics, @NotNull MoveOperation.Feedback feedback) {
-    AreaCandidate maxArea = feedback.getMaxArea();
+    EmptySpace maxArea = feedback.getMaxArea();
     if (maxArea == null)
       return;
 
     DrawingStyle candidateStyle = new DrawingStyle(Color.gray, new BasicStroke(1));
     graphics.useStyle(candidateStyle);
-    paintAreaCandidate(graphics, maxArea);
+    paintArea(graphics, maxArea);
     for (XTab tab : feedback.getMaxAreaXTabs())
-      paintTab(graphics, tab, maxArea.top.getValue(), maxArea.bottom.getValue());
+      paintTab(graphics, tab, maxArea.getTop().getValue(), maxArea.getBottom().getValue());
     for (YTab tab : feedback.getMaxAreaYTabs())
-      paintTab(graphics, tab, maxArea.left.getValue(), maxArea.right.getValue());
+      paintTab(graphics, tab, maxArea.getLeft().getValue(), maxArea.getRight().getValue());
 
     DrawingStyle targetStyle = new DrawingStyle(TARGET_COLOR, new BasicStroke(1));
     graphics.useStyle(targetStyle);
@@ -150,7 +147,7 @@ class FeedbackPainter extends JComponent {
       setToolTipText(null, 0);
   }
 
-  private void paintArea(@NotNull DesignerGraphics graphics, @NotNull Area area) {
+  private void paintArea(@NotNull DesignerGraphics graphics, @NotNull IArea area) {
     Rectangle targetRect = myLayoutSpecManager.fromModel(getParent(), area.getRect());
     graphics.drawRect(targetRect.x, targetRect.y, targetRect.width, targetRect.height);
   }
