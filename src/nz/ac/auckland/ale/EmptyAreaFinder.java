@@ -164,7 +164,7 @@ public class EmptyAreaFinder {
       // try to split
       EmptySpace newSpace = TilingAlgebra.split(data, space, tab, map, direction);
       if (newSpace != null)
-        return newSpace;
+        return space;
     }
     return space;
   }
