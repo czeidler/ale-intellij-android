@@ -139,22 +139,6 @@ public class EmptyAreaFinder {
     return null;
   }
 
-  private AlgebraData cloneWithReplacedEmptySpaces(AlgebraData layoutStructure, EmptySpace old, EmptySpace replacement) {
-    AlgebraData clone = new AlgebraData(layoutStructure.getLeft(), layoutStructure.getTop(), layoutStructure.getRight(), layoutStructure.getBottom());
-    for (Area area : layoutStructure.getAreas())
-      clone.addArea(area);
-
-    for (EmptySpace emptySpace : layoutStructure.getEmptySpaces()) {
-      EmptySpace emptySpaceClone;
-      if (old != emptySpace) {
-        emptySpaceClone = new EmptySpace(emptySpace.getLeft(), emptySpace.getTop(), emptySpace.getRight(), emptySpace.getBottom());
-      } else
-        emptySpaceClone = replacement;
-      clone.addArea(emptySpaceClone);
-    }
-    return clone;
-  }
-
   private EmptySpace minimizeArea(EmptySpace space, float x, float y) {
     Map<XTab, Edge> xTabEdgeMap = algebraData.getXTabEdges();
     Map<YTab, Edge> yTabEdgeMap = algebraData.getYTabEdges();
@@ -170,7 +154,8 @@ public class EmptyAreaFinder {
     while (true) {
       Tab tab = tabFinder.find(target);
       assert tab != null; // there should always be a tab within the empty space!
-      if (tab == direction.getTab(space))
+      Variable spaceTab = direction.getTab(space);
+      if (tab == spaceTab || LayoutSpec.fuzzyEquals(tab, spaceTab))
         break;
       target = tab.getValue();
       // try to split
@@ -181,103 +166,96 @@ public class EmptyAreaFinder {
     return space;
   }
 
-  private EmptySpace maximizeArea(EmptySpace area, List<XTab> containingXTabs, List<YTab> containingYTabs) {
-    IDirection left = new LeftDirection();
-    IDirection top = new TopDirection();
-    IDirection right = new RightDirection();
-    IDirection bottom = new BottomDirection();
+  static class MaximizeCandidate<Tab extends Variable, OrthTab extends Variable> {
+    public EmptySpace candidate;
+    public AlgebraData data;
+    final public List<Tab> containingTabs;
+    final public IDirection<Tab, OrthTab> direction;
 
-    while (true) {
-      double leftSize = 0;
-      double rightSize = 0;
-      double topSize = 0;
-      double bottomSize = 0;
-      EmptySpace leftCandidate = null;
-      AlgebraData leftStructure = null;
-      EmptySpace rightCandidate = null;
-      AlgebraData rightStructure = null;
-      EmptySpace topCandidate = null;
-      AlgebraData topStructure = null;
-      EmptySpace bottomCandidate = null;
-      AlgebraData bottomStructure = null;
-      Map<XTab, Edge> xTabEdgeMap = algebraData.getXTabEdges();
-      Map<YTab, Edge> yTabEdgeMap = algebraData.getYTabEdges();
+    public MaximizeCandidate(List<Tab> containingTabs, IDirection<Tab, OrthTab> direction) {
+      this.containingTabs = containingTabs;
+      this.direction = direction;
+    }
 
-      if (area.getLeft() != algebraData.getLeft()) {
-        leftCandidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
-        leftStructure = cloneWithReplacedEmptySpaces(algebraData, area, leftCandidate);
-        leftStructure.removeArea(area);
-        leftStructure.addArea(leftCandidate);
-        LambdaTransformation trafo = new LambdaTransformation(algebraData);
-        if (trafo.extend(leftCandidate, left, xTabEdgeMap, bottom, yTabEdgeMap)) {
-          leftSize = getSize(leftCandidate);
+    public double maximize(EmptySpace area, AlgebraData orgData, Tab border, Map<Tab, Edge> map, IDirection<OrthTab, Tab> orthDirection,
+                           Map<OrthTab, Edge> orthMap) {
+      double size = 0;
+      if (direction.getTab(area) != border) {
+        candidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
+        data = cloneWithReplacedEmptySpaces(orgData, area, candidate);
+        LambdaTransformation trafo = new LambdaTransformation(data);
+        if (trafo.extend(candidate, direction, map, orthDirection, orthMap)) {
+          size = getSize(candidate);
         } else {
-          leftCandidate = null;
-          leftStructure = null;
+          candidate = null;
+          data = null;
         }
       }
-      if (area.getRight() != algebraData.getRight()) {
-        rightCandidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
-        rightStructure = cloneWithReplacedEmptySpaces(algebraData, area, rightCandidate);
-        rightStructure.removeArea(area);
-        rightStructure.addArea(rightCandidate);
-        LambdaTransformation trafo = new LambdaTransformation(algebraData);
-        if (trafo.extend(rightCandidate, right, xTabEdgeMap, bottom, yTabEdgeMap)) {
-          rightSize = getSize(rightCandidate);
-        } else {
-          rightCandidate = null;
-          rightStructure = null;
-        }
-      }
-      if (area.getTop() != algebraData.getTop()) {
-        topCandidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
-        topStructure = cloneWithReplacedEmptySpaces(algebraData, area, topCandidate);
-        topStructure.removeArea(area);
-        topStructure.addArea(topCandidate);
-        LambdaTransformation trafo = new LambdaTransformation(algebraData);
-        if (trafo.extend(topCandidate, top, yTabEdgeMap, right, xTabEdgeMap)) {
-          topSize = getSize(topCandidate);
-        } else {
-          topCandidate = null;
-          topStructure = null;
-        }
-      }
-      if (area.getBottom() != algebraData.getBottom()) {
-        bottomCandidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
-        bottomStructure = cloneWithReplacedEmptySpaces(algebraData, area, bottomCandidate);
-        bottomStructure.removeArea(area);
-        bottomStructure.addArea(bottomCandidate);
-        LambdaTransformation trafo = new LambdaTransformation(algebraData);
-        if (trafo.extend(bottomCandidate, bottom, yTabEdgeMap, right, xTabEdgeMap)) {
-          bottomSize = getSize(bottomCandidate);
-        } else {
-          bottomCandidate = null;
-          bottomStructure = null;
-        }
-      }
+      return size;
+    }
 
-      if (leftCandidate == null && rightCandidate == null && topCandidate == null && bottomCandidate == null) return area;
-      if (leftCandidate != null && leftSize > rightSize && leftSize > topSize && leftSize > bottomSize) {
-        algebraData = leftStructure;
-        area = leftCandidate;
-        containingXTabs.add(area.getLeft());
-      } else if (rightCandidate != null && rightSize > topSize && rightSize > bottomSize) {
-        algebraData = rightStructure;
-        area = rightCandidate;
-        containingXTabs.add(area.getRight());
-      } else if (topCandidate != null && topSize > bottomSize) {
-        algebraData = topStructure;
-        area = topCandidate;
-        containingYTabs.add(area.getTop());
-      } else if (bottomCandidate != null) {
-        algebraData = bottomStructure;
-        area = bottomCandidate;
-        containingYTabs.add(area.getBottom());
-      }
+    private double getSize(IArea area) {
+      return (area.getRight().getValue() - area.getLeft().getValue()) * (area.getBottom().getValue() - area.getTop().getValue());
     }
   }
 
-  private double getSize(IArea area) {
-    return (area.getRight().getValue() - area.getLeft().getValue()) * (area.getBottom().getValue() - area.getTop().getValue());
+  static private AlgebraData cloneWithReplacedEmptySpaces(AlgebraData layoutStructure, EmptySpace old, EmptySpace replacement) {
+    AlgebraData clone = new AlgebraData(layoutStructure.getLeft(), layoutStructure.getTop(), layoutStructure.getRight(),
+                                        layoutStructure.getBottom());
+    for (Area area : layoutStructure.getAreas())
+      clone.addArea(area);
+
+    for (EmptySpace emptySpace : layoutStructure.getEmptySpaces()) {
+      EmptySpace emptySpaceClone;
+      if (old != emptySpace) {
+        emptySpaceClone = new EmptySpace(emptySpace.getLeft(), emptySpace.getTop(), emptySpace.getRight(), emptySpace.getBottom());
+      } else
+        emptySpaceClone = replacement;
+      clone.addArea(emptySpaceClone);
+    }
+    return clone;
+  }
+
+  private EmptySpace maximizeArea(EmptySpace area, List<XTab> containingXTabs, List<YTab> containingYTabs) {
+    IDirection<XTab, YTab> left = new LeftDirection();
+    IDirection<YTab, XTab> top = new TopDirection();
+    IDirection<XTab, YTab> right = new RightDirection();
+    IDirection<YTab, XTab> bottom = new BottomDirection();
+
+    AlgebraData currentAlgebraData = algebraData;
+
+    while (true) {
+      MaximizeCandidate<XTab, YTab> leftCandidate = new MaximizeCandidate<XTab, YTab>(containingXTabs, left);
+      MaximizeCandidate<YTab, XTab> topCandidate = new MaximizeCandidate<YTab, XTab>(containingYTabs, top);
+      MaximizeCandidate<XTab, YTab> rightCandidate = new MaximizeCandidate<XTab, YTab>(containingXTabs, right);
+      MaximizeCandidate<YTab, XTab> bottomCandidate = new MaximizeCandidate<YTab, XTab>(containingYTabs, bottom);
+
+      Map<XTab, Edge> xTabEdgeMap = currentAlgebraData.getXTabEdges();
+      Map<YTab, Edge> yTabEdgeMap = currentAlgebraData.getYTabEdges();
+
+      double leftSize = leftCandidate.maximize(area, currentAlgebraData, algebraData.getLeft(), xTabEdgeMap, bottom, yTabEdgeMap);
+      double rightSize = rightCandidate.maximize(area, currentAlgebraData, algebraData.getRight(), xTabEdgeMap, bottom, yTabEdgeMap);
+      double topSize = topCandidate.maximize(area, currentAlgebraData, algebraData.getTop(), yTabEdgeMap, right, xTabEdgeMap);
+      double bottomSize = bottomCandidate.maximize(area, currentAlgebraData, algebraData.getBottom(), yTabEdgeMap, right, xTabEdgeMap);
+
+      // choose best candidate
+      MaximizeCandidate candidate = null;
+      if (leftCandidate.candidate == null && rightCandidate.candidate == null && topCandidate.candidate == null
+          && bottomCandidate.candidate == null) return area;
+      if (leftCandidate.candidate != null && leftSize > rightSize && leftSize > topSize && leftSize > bottomSize) {
+        candidate = leftCandidate;
+      } else if (rightCandidate.candidate != null && rightSize > topSize && rightSize > bottomSize) {
+        candidate = rightCandidate;
+      } else if (topCandidate.candidate != null && topSize > bottomSize) {
+        candidate = topCandidate;
+      } else if (bottomCandidate.candidate != null) {
+        candidate = bottomCandidate;
+      }
+      if (candidate != null) {
+        candidate.containingTabs.add(candidate.direction.getTab(area));
+        area = candidate.candidate;
+        currentAlgebraData = candidate.data;
+      }
+    }
   }
 }
