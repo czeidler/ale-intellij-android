@@ -109,6 +109,7 @@ public class MoveOperation extends AbstractEditOperation {
   @Override
   public void perform() {
     AlgebraData algebraData = layoutEditor.getAlgebraData();
+    TilingAlgebra.makeAreaEmpty(algebraData, movedArea);
     AlgebraData transformedAlgebraData = emptyAreaFinder.getTransformedAlgebraData();
     // replace empty spaces
     while (algebraData.getEmptySpaces().size() > 0)
