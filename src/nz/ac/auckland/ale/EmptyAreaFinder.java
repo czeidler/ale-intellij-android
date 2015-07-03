@@ -180,14 +180,12 @@ public class EmptyAreaFinder {
       this.direction = direction;
     }
 
-    public double maximize(EmptySpace area, AlgebraData orgData, Tab border, Map<Tab, Edge> map, IDirection<OrthTab, Tab> orthDirection,
-                           Map<OrthTab, Edge> orthMap) {
+    public double maximize(EmptySpace area, AlgebraData orgData, Tab border, IDirection<OrthTab, Tab> orthDirection) {
       double size = 0;
       if (direction.getTab(area) != border) {
         candidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
         data = LayoutEditor.cloneWithReplacedEmptySpaces(orgData, area, candidate);
-        LambdaTransformation trafo = new LambdaTransformation(data);
-        if (trafo.extend(candidate, direction, map, orthDirection, orthMap)) {
+        if (TilingAlgebra.extend(data, candidate, direction, orthDirection)) {
           size = getSize(candidate);
         } else {
           candidate = null;
@@ -214,13 +212,10 @@ public class EmptyAreaFinder {
       MaximizeCandidate<XTab, YTab> rightCandidate = new MaximizeCandidate<XTab, YTab>(containingXTabs, right);
       MaximizeCandidate<YTab, XTab> bottomCandidate = new MaximizeCandidate<YTab, XTab>(containingYTabs, bottom);
 
-      Map<XTab, Edge> xTabEdgeMap = algebraData.getXTabEdges();
-      Map<YTab, Edge> yTabEdgeMap = algebraData.getYTabEdges();
-
-      double leftSize = leftCandidate.maximize(area, algebraData, algebraData.getLeft(), xTabEdgeMap, bottom, yTabEdgeMap);
-      double rightSize = rightCandidate.maximize(area, algebraData, algebraData.getRight(), xTabEdgeMap, bottom, yTabEdgeMap);
-      double topSize = topCandidate.maximize(area, algebraData, algebraData.getTop(), yTabEdgeMap, right, xTabEdgeMap);
-      double bottomSize = bottomCandidate.maximize(area, algebraData, algebraData.getBottom(), yTabEdgeMap, right, xTabEdgeMap);
+      double leftSize = leftCandidate.maximize(area, algebraData, algebraData.getLeft(), bottom);
+      double rightSize = rightCandidate.maximize(area, algebraData, algebraData.getRight(), bottom);
+      double topSize = topCandidate.maximize(area, algebraData, algebraData.getTop(), right);
+      double bottomSize = bottomCandidate.maximize(area, algebraData, algebraData.getBottom(), right);
 
       // choose best candidate
       MaximizeCandidate candidate = null;
