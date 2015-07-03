@@ -166,4 +166,30 @@ public class LayoutEditor {
     }
     return null;
   }
+
+  static public AlgebraData cloneWithReplacedEmptySpaces(AlgebraData algebraData) {
+    return cloneWithReplacedEmptySpaces(algebraData, null, null);
+  }
+
+  static public AlgebraData cloneWithReplacedEmptySpaces(AlgebraData layoutStructure, EmptySpace old, EmptySpace replacement) {
+    assert old == null || old.getLeft() == replacement.getLeft();
+    assert old == null || old.getTop() == replacement.getTop();
+    assert old == null || old.getRight() == replacement.getRight();
+    assert old == null || old.getBottom() == replacement.getBottom();
+
+    AlgebraData clone = new AlgebraData(layoutStructure.getLeft(), layoutStructure.getTop(), layoutStructure.getRight(),
+                                        layoutStructure.getBottom());
+    for (Area area : layoutStructure.getAreas())
+      clone.addArea(area);
+
+    for (EmptySpace emptySpace : layoutStructure.getEmptySpaces()) {
+      EmptySpace emptySpaceClone;
+      if (old != emptySpace) {
+        emptySpaceClone = new EmptySpace(emptySpace.getLeft(), emptySpace.getTop(), emptySpace.getRight(), emptySpace.getBottom());
+      } else
+        emptySpaceClone = replacement;
+      clone.addArea(emptySpaceClone);
+    }
+    return clone;
+  }
 }

@@ -32,7 +32,7 @@ public class EmptyAreaFinder {
   AlgebraData algebraData;
 
   public EmptyAreaFinder(AlgebraData myAlgebraData) {
-    this.algebraData = cloneWithReplacedEmptySpaces(myAlgebraData, null, null);
+    this.algebraData = LayoutEditor.cloneWithReplacedEmptySpaces(myAlgebraData, null, null);
   }
 
   public EmptySpace getMaxArea() {
@@ -155,7 +155,8 @@ public class EmptyAreaFinder {
                                                          Map<Tab, Edge> map, ITabFinder<Tab> tabFinder) {
     while (true) {
       Tab tab = tabFinder.find(target);
-      assert tab != null; // there should always be a tab within the empty space!
+      if (tab == null)
+        return space;
       Variable spaceTab = direction.getTab(space);
       if (tab == spaceTab || LayoutSpec.fuzzyEquals(tab, spaceTab))
         break;
@@ -184,7 +185,7 @@ public class EmptyAreaFinder {
       double size = 0;
       if (direction.getTab(area) != border) {
         candidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
-        data = cloneWithReplacedEmptySpaces(orgData, area, candidate);
+        data = LayoutEditor.cloneWithReplacedEmptySpaces(orgData, area, candidate);
         LambdaTransformation trafo = new LambdaTransformation(data);
         if (trafo.extend(candidate, direction, map, orthDirection, orthMap)) {
           size = getSize(candidate);
@@ -199,23 +200,6 @@ public class EmptyAreaFinder {
     private double getSize(IArea area) {
       return (area.getRight().getValue() - area.getLeft().getValue()) * (area.getBottom().getValue() - area.getTop().getValue());
     }
-  }
-
-  static private AlgebraData cloneWithReplacedEmptySpaces(AlgebraData layoutStructure, EmptySpace old, EmptySpace replacement) {
-    AlgebraData clone = new AlgebraData(layoutStructure.getLeft(), layoutStructure.getTop(), layoutStructure.getRight(),
-                                        layoutStructure.getBottom());
-    for (Area area : layoutStructure.getAreas())
-      clone.addArea(area);
-
-    for (EmptySpace emptySpace : layoutStructure.getEmptySpaces()) {
-      EmptySpace emptySpaceClone;
-      if (old != emptySpace) {
-        emptySpaceClone = new EmptySpace(emptySpace.getLeft(), emptySpace.getTop(), emptySpace.getRight(), emptySpace.getBottom());
-      } else
-        emptySpaceClone = replacement;
-      clone.addArea(emptySpaceClone);
-    }
-    return clone;
   }
 
   private EmptySpace maximizeArea(EmptySpace area, List<XTab> containingXTabs, List<YTab> containingYTabs) {
