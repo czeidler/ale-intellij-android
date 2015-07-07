@@ -64,20 +64,20 @@ public class ResizeOperation extends AbstractEditOperation {
     }
     if (xDirection != null) {
       getResizeCandidateTabs(xCandidates, resizeArea, layoutEditor.getAlgebraData().getXTabEdges(), xDirection);
-      targetXTab = getTabAt(xCandidates, x, xDirection, new BottomDirection());
+      targetXTab = resize(xCandidates, x, xDirection, new BottomDirection());
       if (targetXTab == null && !layoutEditor.isOverTab(xDirection.getTab(resizeArea), x) && resizeArea.getRect().contains(x, y)
           && Math.abs(xDirection.getTab(resizeArea).getValue() - x) < layoutEditor.getDetachThresholdModel()) {
-        detach(xDirection, new BottomDirection());
-        detachX = true;
+        if (detach(xDirection, new BottomDirection()))
+          detachX = true;
       }
     }
     if (yDirection != null) {
       getResizeCandidateTabs(yCandidates, resizeArea, layoutEditor.getAlgebraData().getYTabEdges(), yDirection);
-      targetYTab = getTabAt(yCandidates, y, yDirection, new RightDirection());
+      targetYTab = resize(yCandidates, y, yDirection, new RightDirection());
       if (targetYTab == null && !layoutEditor.isOverTab(yDirection.getTab(resizeArea), y) && resizeArea.getRect().contains(x, y)
           && Math.abs(yDirection.getTab(resizeArea).getValue() - y) < layoutEditor.getDetachThresholdModel()) {
-        detach(yDirection, new RightDirection());
-        detachY = true;
+        if (detach(yDirection, new RightDirection()))
+          detachY = true;
       }
     }
   }
@@ -98,7 +98,7 @@ public class ResizeOperation extends AbstractEditOperation {
     }
   }
 
-  private <Tab extends Variable> Tab getTabAt(List<Tab> tabs, float position, IDirection direction, IDirection orthDirection) {
+  private <Tab extends Variable> Tab resize(List<Tab> tabs, float position, IDirection direction, IDirection orthDirection) {
     for (Tab tab : tabs) {
       if (layoutEditor.isOverTab(tab, position)) {
         Candidate candidate = getNewCandidate();
@@ -113,10 +113,11 @@ public class ResizeOperation extends AbstractEditOperation {
   }
 
   private <Tab extends Variable, OrthTab extends Variable>
-  void detach(IDirection<Tab, OrthTab> direction, IDirection<OrthTab, Tab> orthDirection) {
+  boolean detach(IDirection<Tab, OrthTab> direction, IDirection<OrthTab, Tab> orthDirection) {
     Candidate candidate = getNewCandidate();
     AlgebraData data = candidate.algebraData;
     EmptySpace resizeSpace = candidate.emptySpace;
+
     while (TilingAlgebra.extend(data, resizeSpace, direction, orthDirection));
 
     Tab newTab = direction.createTab();
@@ -130,7 +131,26 @@ public class ResizeOperation extends AbstractEditOperation {
     data.addArea(resizeSpace);
     data.addArea(newEmptySpace);
 
+    // still connected to at least one border
+    IDirection<Tab, OrthTab> oppositeDirection = direction.getOppositeDirection();
+    Area dummy = new Area(resizeSpace.getLeft(), resizeSpace.getTop(), resizeSpace.getRight(), resizeSpace.getBottom());
+    TilingAlgebra.addAreaAtEmptySpace(data, dummy, resizeSpace);
+    List<Area> group = LayoutItemPath.detect(dummy, data.getXTabEdges(), data.getYTabEdges());
+    if (!contains(direction.getTab(data), group, direction) && !contains(oppositeDirection.getTab(data), group, oppositeDirection))
+      return false;
+    data.removeArea(dummy);
+    data.addArea(resizeSpace);
+
     targetCandidate = candidate;
+    return true;
+  }
+
+  private <Tab extends Variable> boolean contains(Tab tab, List<Area> areas, IDirection direction) {
+    for (Area area : areas) {
+      if (direction.getTab(area) == tab)
+        return true;
+    }
+    return false;
   }
 
   private <Tab extends Variable> void getResizeCandidateTabs(List<Tab> candidates, Area area, Map<Tab, Edge> edges, IDirection direction) {
