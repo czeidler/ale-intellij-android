@@ -31,8 +31,8 @@ public class EmptyAreaFinder {
 
   AlgebraData algebraData;
 
-  public EmptyAreaFinder(AlgebraData myAlgebraData) {
-    this.algebraData = LayoutEditor.cloneWithReplacedEmptySpaces(myAlgebraData, null, null);
+  public EmptyAreaFinder(AlgebraData algebraData) {
+    this.algebraData = algebraData;
   }
 
   public EmptySpace getMaxArea() {

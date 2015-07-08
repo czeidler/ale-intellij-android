@@ -20,6 +20,7 @@ import nz.ac.auckland.alm.EmptySpace;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
 import nz.ac.auckland.alm.algebra.AlgebraData;
+import nz.ac.auckland.alm.algebra.EmptyAreaCleaner;
 import nz.ac.auckland.alm.algebra.TilingAlgebra;
 import nz.ac.auckland.linsolve.Variable;
 
@@ -36,17 +37,16 @@ public class MoveOperation extends AbstractEditOperation {
 
     this.movedArea = movedArea;
 
-    AlgebraData layoutStructure = layoutEditor.getAlgebraData();
-    EmptySpace space = TilingAlgebra.makeAreaEmpty(layoutStructure, movedArea);
+    AlgebraData clone = LayoutEditor.cloneWithReplacedEmptySpaces(layoutEditor.getAlgebraData(), null, null);
+    if (TilingAlgebra.makeAreaEmpty(clone, movedArea) != null)
+      EmptyAreaCleaner.clean(clone);
 
-    emptyAreaFinder = new EmptyAreaFinder(layoutEditor.getAlgebraData());
+    emptyAreaFinder = new EmptyAreaFinder(clone);
     if (!emptyAreaFinder.find(dragX, dragY)) {
       emptyAreaFinder = null;
       return;
     }
     findTargetArea(dragRect, layoutEditor.getSnapModel());
-
-    TilingAlgebra.addAreaAtEmptySpace(layoutStructure, movedArea, space);
   }
 
   private void findTargetArea(Area.Rect rect, float snapDistance) {

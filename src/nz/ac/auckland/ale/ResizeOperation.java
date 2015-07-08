@@ -132,25 +132,16 @@ public class ResizeOperation extends AbstractEditOperation {
     data.addArea(newEmptySpace);
 
     // still connected to at least one border
-    IDirection<Tab, OrthTab> oppositeDirection = direction.getOppositeDirection();
     Area dummy = new Area(resizeSpace.getLeft(), resizeSpace.getTop(), resizeSpace.getRight(), resizeSpace.getBottom());
     TilingAlgebra.addAreaAtEmptySpace(data, dummy, resizeSpace);
     List<Area> group = LayoutItemPath.detect(dummy, data.getXTabEdges(), data.getYTabEdges());
-    if (!contains(direction.getTab(data), group, direction) && !contains(oppositeDirection.getTab(data), group, oppositeDirection))
+    if (!FillGap.isConnectedToBorder1OrBorder2(data, group, direction))
       return false;
     data.removeArea(dummy);
     data.addArea(resizeSpace);
 
     targetCandidate = candidate;
     return true;
-  }
-
-  private <Tab extends Variable> boolean contains(Tab tab, List<Area> areas, IDirection direction) {
-    for (Area area : areas) {
-      if (direction.getTab(area) == tab)
-        return true;
-    }
-    return false;
   }
 
   private <Tab extends Variable> void getResizeCandidateTabs(List<Tab> candidates, Area area, Map<Tab, Edge> edges, IDirection direction) {
