@@ -17,6 +17,7 @@ package nz.ac.auckland.ale;
 
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.algebra.AlgebraData;
+import nz.ac.auckland.alm.algebra.FillGap;
 import nz.ac.auckland.alm.algebra.TilingAlgebra;
 
 
