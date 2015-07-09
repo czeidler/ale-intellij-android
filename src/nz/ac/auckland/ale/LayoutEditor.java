@@ -78,8 +78,7 @@ public class LayoutEditor {
   public void perform() {
     currentEditOperation.perform();
 
-    EmptyAreaCleaner cleaner = new EmptyAreaCleaner(algebraData);
-    cleaner.clean();
+    EmptyAreaCleaner.clean(algebraData);
     algebraData.applyToLayoutSpec(layoutSpec);
     algebraData = null;
   }
@@ -122,7 +121,7 @@ public class LayoutEditor {
         // swap
         mouseOver = findContentAreaAt(dragX, dragY);
         if (mouseOver != null) {
-          currentEditOperation = new SwapOperation(this, sourceArea, mouseOver);
+          currentEditOperation = new SwapOperation(this, movedArea, mouseOver);
           if (currentEditOperation.canPerform()) return currentEditOperation;
         }
       }

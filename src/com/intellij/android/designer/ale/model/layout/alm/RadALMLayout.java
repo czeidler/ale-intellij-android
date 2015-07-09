@@ -15,7 +15,6 @@
  */
 package com.intellij.android.designer.ale.model.layout.alm;
 
-import com.android.ide.common.rendering.api.ViewInfo;
 import com.intellij.android.designer.designSurface.graphics.DrawingStyle;
 import com.intellij.android.designer.model.RadViewComponent;
 import com.intellij.android.designer.model.RadViewLayoutWithData;
@@ -25,6 +24,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import nz.ac.auckland.ale.IEditOperation;
 import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.IALMLayoutSpecs;
+import nz.ac.auckland.alm.algebra.AlgebraData;
 import nz.ac.auckland.alm.algebra.SoundLayoutBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,7 +48,9 @@ public class RadALMLayout extends RadViewLayoutWithData implements ILayoutDecora
 
     myLayoutSpecManager = new LayoutSpecManager(almLayoutSpecs, layout);
 
-    SoundLayoutBuilder.fillWithEmptySpaces(myLayoutSpecManager.getLayoutSpec());
+    AlgebraData data = SoundLayoutBuilder.fillWithEmptySpaces(myLayoutSpecManager.getLayoutSpec());
+    if (data != null)
+      data.applyToLayoutSpec(myLayoutSpecManager.getLayoutSpec());
 
     return myLayoutSpecManager;
   }

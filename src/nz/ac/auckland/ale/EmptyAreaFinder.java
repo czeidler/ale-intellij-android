@@ -185,7 +185,7 @@ public class EmptyAreaFinder {
       if (direction.getTab(area) != border) {
         candidate = new EmptySpace(area.getLeft(), area.getTop(), area.getRight(), area.getBottom());
         data = LayoutEditor.cloneWithReplacedEmptySpaces(orgData, area, candidate);
-        if (TilingAlgebra.extend(data, candidate, direction, orthDirection)) {
+        if (TilingAlgebra.extend(data, candidate, direction)) {
           size = getSize(candidate);
         } else {
           candidate = null;
