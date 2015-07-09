@@ -164,8 +164,12 @@ public class ResizeOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
-    XTab resizedTabX = xDirection.getTab(resizeArea);
-    YTab resizedTabY = yDirection.getTab(resizeArea);
+    XTab resizedTabX = null;
+    if (xDirection != null)
+      resizedTabX = xDirection.getTab(resizeArea);
+    YTab resizedTabY = null;
+    if (yDirection != null)
+      resizedTabY = yDirection.getTab(resizeArea);
 
     AlgebraData algebraData = layoutEditor.getAlgebraData();
     algebraData.removeArea(resizeArea);
