@@ -19,9 +19,7 @@ import nz.ac.auckland.alm.Area;
 import nz.ac.auckland.alm.EmptySpace;
 import nz.ac.auckland.alm.XTab;
 import nz.ac.auckland.alm.YTab;
-import nz.ac.auckland.alm.algebra.AlgebraData;
-import nz.ac.auckland.alm.algebra.EmptyAreaCleaner;
-import nz.ac.auckland.alm.algebra.TilingAlgebra;
+import nz.ac.auckland.alm.algebra.*;
 import nz.ac.auckland.linsolve.Variable;
 
 import java.util.ArrayList;
@@ -108,6 +106,12 @@ public class MoveOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
+    // store the init tab for gap filling
+    XTab initLeft = movedArea.getLeft();
+    YTab initTop = movedArea.getTop();
+    XTab initRight = movedArea.getRight();
+    YTab initBottom = movedArea.getBottom();
+
     AlgebraData algebraData = layoutEditor.getAlgebraData();
     TilingAlgebra.makeAreaEmpty(algebraData, movedArea);
     AlgebraData transformedAlgebraData = emptyAreaFinder.getTransformedAlgebraData();
@@ -119,6 +123,9 @@ public class MoveOperation extends AbstractEditOperation {
 
     movedArea.setTo(targetArea.left, targetArea.top, targetArea.right, targetArea.bottom);
     TilingAlgebra.placeAreaInEmptySpace(algebraData, movedArea, emptyAreaFinder.maxArea);
+
+    // fill the gap
+    FillGap.fill(algebraData, initLeft, initTop, initRight, initBottom);
   }
 
   public class Feedback implements IEditOperationFeedback {

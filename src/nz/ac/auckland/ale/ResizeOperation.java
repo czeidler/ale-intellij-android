@@ -36,8 +36,8 @@ public class ResizeOperation extends AbstractEditOperation {
   Candidate targetCandidate;
   boolean detachX = false;
   boolean detachY = false;
-  IDirection xDirection;
-  IDirection yDirection;
+  IDirection<XTab, YTab> xDirection;
+  IDirection<YTab, XTab> yDirection;
 
   class Candidate {
     public AlgebraData algebraData;
@@ -118,7 +118,7 @@ public class ResizeOperation extends AbstractEditOperation {
     AlgebraData data = candidate.algebraData;
     EmptySpace resizeSpace = candidate.emptySpace;
 
-    while (TilingAlgebra.extend(data, resizeSpace, direction, orthDirection));
+    while (TilingAlgebra.extend(data, resizeSpace, direction));
 
     Tab newTab = direction.createTab();
     data.removeArea(resizeSpace);
@@ -164,6 +164,9 @@ public class ResizeOperation extends AbstractEditOperation {
 
   @Override
   public void perform() {
+    XTab resizedTabX = xDirection.getTab(resizeArea);
+    YTab resizedTabY = yDirection.getTab(resizeArea);
+
     AlgebraData algebraData = layoutEditor.getAlgebraData();
     algebraData.removeArea(resizeArea);
     // replace empty spaces
@@ -175,6 +178,11 @@ public class ResizeOperation extends AbstractEditOperation {
     EmptySpace target = targetCandidate.emptySpace;
     resizeArea.setTo(target.getLeft(), target.getTop(), target.getRight(), target.getBottom());
     TilingAlgebra.addAreaAtEmptySpace(algebraData, resizeArea, target);
+
+    if (targetXTab != null)
+      FillGap.fill(algebraData, resizedTabX, xDirection, xDirection.getOppositeDirection());
+    if (targetYTab != null)
+      FillGap.fill(algebraData, resizedTabY, yDirection, yDirection.getOppositeDirection());
   }
 
   public class Feedback implements IEditOperationFeedback {
