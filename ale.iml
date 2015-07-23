@@ -19,5 +19,6 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="xml-psi-api" />
+    <orderEntry type="module" module-name="ui-designer" />
   </component>
 </module>

@@ -18,6 +18,7 @@ package com.intellij.android.designer.ale;
 import com.intellij.android.designer.model.ViewsMetaManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
+import com.intellij.uiDesigner.palette.Palette;
 
 import java.io.InputStream;
 
@@ -26,6 +27,9 @@ public class ALEProjectComponent extends AbstractProjectComponent {
   public ALEProjectComponent(Project project) {
     super(project);
 
+  }
+
+  private void installAndroid() {
     ViewsMetaManager viewsMetaManager = ViewsMetaManager.getInstance(myProject);
     viewsMetaManager.getPaletteGroups();
 
@@ -39,8 +43,14 @@ public class ALEProjectComponent extends AbstractProjectComponent {
     }
   }
 
+  private void installSwing() {
+    Palette palette = Palette.getInstance(myProject);
+    //TODO: install ALM layout to palette.addIdem()
+  }
+
   @Override
   public void initComponent() {
-
+    installAndroid();
+    installSwing();
   }
 }
